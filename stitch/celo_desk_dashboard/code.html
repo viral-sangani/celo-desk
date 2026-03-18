@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+
+<html class="h-full" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Celo Desk | Financial Terminal</title>
+<!-- BEGIN: External Scripts -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&amp;family=Inter:wght@400;600&amp;display=swap" rel="stylesheet"/>
+<!-- END: External Scripts -->
+<!-- BEGIN: Tailwind Configuration -->
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            mono: ['"JetBrains Mono"', 'monospace'],
+            sans: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            terminal: {
+              black: '#0a0a0a',
+              border: '#2a2a2a',
+              amber: '#ffb400',
+              green: '#00ff41',
+              red: '#ff3131',
+              text: '#d1d5db'
+            }
+          }
+        }
+      }
+    }
+  </script>
+<!-- END: Tailwind Configuration -->
+<!-- BEGIN: Custom Styles -->
+<style data-purpose="terminal-layout">
+    body {
+      background-color: #0a0a0a;
+      color: #d1d5db;
+      font-family: 'JetBrains Mono', monospace;
+      overflow: hidden;
+    }
+    .border-panel {
+      border: 1px solid #2a2a2a;
+    }
+    .panel-header {
+      border-bottom: 1px solid #2a2a2a;
+      background-color: #141414;
+      padding: 4px 8px;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #0a0a0a;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #2a2a2a;
+    }
+    .tab-active {
+      color: #ffb400;
+      border-bottom: 1px solid #ffb400;
+    }
+  </style>
+<style data-purpose="chart-simulation">
+    .candle { width: 4px; margin: 0 1px; }
+    .candle-up { background-color: #00ff41; }
+    .candle-down { background-color: #ff3131; }
+    .volume-bar { width: 4px; margin: 0 1px; background-color: #4a4a4a; opacity: 0.5; }
+  </style>
+<!-- END: Custom Styles -->
+</head>
+<body class="h-screen flex flex-col">
+<!-- BEGIN: TopBar -->
+<header class="h-10 border-b border-terminal-border flex items-center justify-between px-4 bg-black z-10" data-purpose="main-header">
+<div class="flex items-center space-x-6">
+<h1 class="text-terminal-amber font-bold tracking-tighter text-lg">CELO DESK</h1>
+<div class="flex items-center space-x-2 text-[10px] text-gray-500">
+<span class="w-2 h-2 rounded-full bg-terminal-green animate-pulse"></span>
+<span class="font-bold text-terminal-green">MAINNET</span>
+<span class="border-l border-terminal-border pl-2">LATENCY: 12ms</span>
+</div>
+</div>
+<div class="flex items-center space-x-4 text-[11px]">
+<div class="flex flex-col items-end">
+<span class="text-gray-400">UTC TIME</span>
+<span class="text-white" id="utc-clock">14:32:05</span>
+</div>
+<div class="flex flex-col items-end border-l border-terminal-border pl-4">
+<span class="text-gray-400">SESSION</span>
+<span class="text-white uppercase">New York Open</span>
+</div>
+</div>
+</header>
+<!-- END: TopBar -->
+<!-- BEGIN: Main Dashboard Grid -->
+<main class="flex-grow grid grid-cols-2 grid-rows-2 p-1 gap-1 h-[calc(100vh-2.5rem)] overflow-hidden">
+<!-- BEGIN: Panel 1 - Price Chart (Top Left) -->
+<section class="border-panel flex flex-col row-span-1 col-span-1" data-purpose="price-chart-panel">
+<div class="panel-header flex justify-between items-center">
+<div class="flex items-center space-x-4">
+<span class="font-bold">CELO / USD</span>
+<div class="flex space-x-2 text-[10px] text-gray-400">
+<button class="hover:text-white">1H</button>
+<button class="tab-active">4H</button>
+<button class="hover:text-white">1D</button>
+<button class="hover:text-white">1W</button>
+</div>
+</div>
+<div class="text-[10px] text-terminal-amber">VOL: 42.1M</div>
+</div>
+<div class="flex-grow p-4 relative flex flex-col">
+<div class="mb-4">
+<div class="text-3xl font-bold text-white tracking-tighter">0.8421 <span class="text-sm text-terminal-green">+4.12%</span></div>
+<div class="text-[10px] text-gray-500">H: 0.8540 | L: 0.8120 | O: 0.8201</div>
+</div>
+<!-- Simulated Chart Area -->
+<div class="flex-grow flex items-end justify-between relative border-b border-l border-terminal-border/30 pb-1 pl-1">
+<!-- Grid Lines -->
+<div class="absolute inset-0 grid grid-cols-6 grid-rows-4 opacity-10 pointer-events-none">
+<div class="border-r border-b border-white"></div><div class="border-r border-b border-white"></div><div class="border-r border-b border-white"></div><div class="border-r border-b border-white"></div><div class="border-r border-b border-white"></div><div class="border-b border-white"></div>
+<div class="border-r border-b border-white"></div><div class="border-r border-b border-white"></div><div class="border-r border-b border-white"></div><div class="border-r border-b border-white"></div><div class="border-r border-b border-white"></div><div class="border-b border-white"></div>
+<div class="border-r border-b border-white"></div><div class="border-r border-b border-white"></div><div class="border-r border-b border-white"></div><div class="border-r border-b border-white"></div><div class="border-r border-b border-white"></div><div class="border-b border-white"></div>
+<div class="border-r border-white"></div><div class="border-r border-white"></div><div class="border-r border-white"></div><div class="border-r border-white"></div><div class="border-r border-white"></div><div></div>
+</div>
+<!-- Candles & Volume -->
+<div class="flex items-end w-full h-full pt-10 px-2 justify-around">
+<div class="flex flex-col items-center"><div class="candle candle-up h-20"></div><div class="volume-bar h-8 mt-2"></div></div>
+<div class="flex flex-col items-center"><div class="candle candle-up h-24"></div><div class="volume-bar h-10 mt-2"></div></div>
+<div class="flex flex-col items-center"><div class="candle candle-down h-16"></div><div class="volume-bar h-12 mt-2"></div></div>
+<div class="flex flex-col items-center"><div class="candle candle-up h-32"></div><div class="volume-bar h-6 mt-2"></div></div>
+<div class="flex flex-col items-center"><div class="candle candle-up h-40"></div><div class="volume-bar h-14 mt-2"></div></div>
+<div class="flex flex-col items-center"><div class="candle candle-down h-28"></div><div class="volume-bar h-9 mt-2"></div></div>
+<div class="flex flex-col items-center"><div class="candle candle-up h-36"></div><div class="volume-bar h-11 mt-2"></div></div>
+<div class="flex flex-col items-center"><div class="candle candle-up h-48"></div><div class="volume-bar h-16 mt-2"></div></div>
+<div class="flex flex-col items-center"><div class="candle candle-down h-30"></div><div class="volume-bar h-7 mt-2"></div></div>
+<div class="flex flex-col items-center"><div class="candle candle-down h-12"></div><div class="volume-bar h-5 mt-2"></div></div>
+<div class="flex flex-col items-center"><div class="candle candle-up h-20"></div><div class="volume-bar h-9 mt-2"></div></div>
+<div class="flex flex-col items-center"><div class="candle candle-up h-25"></div><div class="volume-bar h-10 mt-2"></div></div>
+</div>
+</div>
+</div>
+</section>
+<!-- END: Panel 1 -->
+<!-- BEGIN: Top Right Column -->
+<div class="flex flex-col space-y-1 overflow-hidden h-full">
+<!-- Panel 2 - FX Rates Grid -->
+<section class="border-panel flex flex-col h-1/2" data-purpose="fx-rates-panel">
+<div class="panel-header text-terminal-amber">FX STABLECOIN RATES</div>
+<div class="overflow-auto custom-scrollbar">
+<table class="w-full text-[11px] text-left">
+<thead class="bg-[#1a1a1a] sticky top-0">
+<tr class="text-gray-500 border-b border-terminal-border">
+<th class="p-2 font-normal">PAIR</th>
+<th class="p-2 font-normal">PRICE</th>
+<th class="p-2 font-normal">24H CHG</th>
+<th class="p-2 font-normal">SPREAD</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-terminal-border">
+<tr><td class="p-2">cUSD/USD</td><td class="p-2 text-white">0.9998</td><td class="p-2 text-terminal-red">-0.01%</td><td class="p-2">0.0001</td></tr>
+<tr><td class="p-2">cEUR/EUR</td><td class="p-2 text-white">1.0842</td><td class="p-2 text-terminal-green">+0.12%</td><td class="p-2">0.0004</td></tr>
+<tr><td class="p-2">cREAL/BRL</td><td class="p-2 text-white">4.9512</td><td class="p-2 text-terminal-green">+0.05%</td><td class="p-2">0.0012</td></tr>
+<tr><td class="p-2">cKES/KES</td><td class="p-2 text-white">132.40</td><td class="p-2 text-terminal-red">-0.42%</td><td class="p-2">0.0240</td></tr>
+<tr><td class="p-2">cCOP/COP</td><td class="p-2 text-white">3912.4</td><td class="p-2 text-terminal-green">+0.18%</td><td class="p-2">0.4500</td></tr>
+</tbody>
+</table>
+</div>
+</section>
+<!-- Panel 3 - Watchlist -->
+<section class="border-panel flex flex-col h-1/2" data-purpose="watchlist-panel">
+<div class="panel-header">WATCHLIST</div>
+<div class="overflow-auto custom-scrollbar">
+<table class="w-full text-[11px] text-left">
+<thead class="bg-[#1a1a1a] sticky top-0">
+<tr class="text-gray-500 border-b border-terminal-border">
+<th class="p-2 font-normal">TOKEN</th>
+<th class="p-2 font-normal text-right">PRICE</th>
+<th class="p-2 font-normal text-right">24H %</th>
+<th class="p-2 font-normal text-right">MKT CAP</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-terminal-border text-white">
+<tr><td class="p-2">CELO</td><td class="p-2 text-right">0.8421</td><td class="p-2 text-right text-terminal-green">+4.12</td><td class="p-2 text-right">442.1M</td></tr>
+<tr><td class="p-2">USDC</td><td class="p-2 text-right">1.0000</td><td class="p-2 text-right text-gray-500">0.00</td><td class="p-2 text-right">28.4B</td></tr>
+<tr><td class="p-2">USDT</td><td class="p-2 text-right">0.9999</td><td class="p-2 text-right text-terminal-red">-0.01</td><td class="p-2 text-right">96.2B</td></tr>
+<tr><td class="p-2">BTC</td><td class="p-2 text-right">62,450</td><td class="p-2 text-right text-terminal-green">+1.42</td><td class="p-2 text-right">1.22T</td></tr>
+<tr><td class="p-2">ETH</td><td class="p-2 text-right">3,452.1</td><td class="p-2 text-right text-terminal-red">-0.12</td><td class="p-2 text-right">415.2B</td></tr>
+</tbody>
+</table>
+</div>
+</section>
+</div>
+<!-- END: Top Right Column -->
+<!-- BEGIN: Panel 4 - Agent Portfolio (Bottom Left) -->
+<section class="border-panel flex flex-col row-span-1 col-span-1" data-purpose="agent-portfolio-panel">
+<div class="panel-header flex justify-between">
+<span class="text-terminal-amber font-bold">AGENT PORTFOLIO</span>
+<span class="text-[10px] text-terminal-green">STATUS: ACTIVE - NEXT TRADE IN 3:42</span>
+</div>
+<div class="flex-grow p-4 flex gap-6 overflow-hidden">
+<!-- Stats and Chart Side -->
+<div class="w-1/3 flex flex-col">
+<div class="mb-4">
+<div class="text-gray-500 text-[10px]">TOTAL VALUE (USD)</div>
+<div class="text-2xl font-bold text-white">$142,504.12</div>
+</div>
+<div class="mb-6">
+<div class="text-gray-500 text-[10px]">TOTAL P/L</div>
+<div class="text-lg font-bold text-terminal-green">+$12,401.50 (9.2%)</div>
+</div>
+<!-- Simple Donut Chart Representation -->
+<div class="w-32 h-32 rounded-full border-8 border-terminal-green border-r-terminal-amber border-b-gray-700 mx-auto relative flex items-center justify-center">
+<div class="text-[10px] text-center leading-tight">ASSET<br/>SPLIT</div>
+</div>
+</div>
+<!-- Table Side -->
+<div class="w-2/3 overflow-auto custom-scrollbar border-l border-terminal-border pl-4">
+<table class="w-full text-[11px] text-left">
+<thead>
+<tr class="text-gray-500 border-b border-terminal-border uppercase">
+<th class="pb-2 font-normal">Token</th>
+<th class="pb-2 font-normal text-right">Amount</th>
+<th class="pb-2 font-normal text-right">Value</th>
+<th class="pb-2 font-normal text-right">%</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-terminal-border text-white">
+<tr class="h-8"><td>CELO</td><td class="text-right">85,000</td><td class="text-right">$71,578</td><td class="text-right">50.2%</td></tr>
+<tr class="h-8"><td>cUSD</td><td class="text-right">32,400</td><td class="text-right">$32,400</td><td class="text-right">22.7%</td></tr>
+<tr class="h-8"><td>WETH</td><td class="text-right">8.54</td><td class="text-right">$29,481</td><td class="text-right">20.6%</td></tr>
+<tr class="h-8"><td>cREAL</td><td class="text-right">45,100</td><td class="text-right">$9,045</td><td class="text-right">6.5%</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+</section>
+<!-- END: Panel 4 -->
+<!-- BEGIN: Panel 5 - Market Feed (Bottom Right) -->
+<section class="border-panel flex flex-col row-span-1 col-span-1" data-purpose="market-feed-panel">
+<div class="panel-header">MARKET FEED</div>
+<div class="flex-grow overflow-auto custom-scrollbar p-2">
+<div class="space-y-4">
+<!-- News Item 1 -->
+<article class="border-b border-terminal-border pb-3">
+<div class="flex items-center space-x-2 text-[10px] mb-1">
+<span class="text-terminal-amber">14:28:45</span>
+<span class="text-gray-500">[YAHOO FINANCE]</span>
+</div>
+<h3 class="text-xs text-white leading-relaxed">Celo Foundation announces partnership for stablecoin adoption in East Africa region.</h3>
+</article>
+<!-- News Item 2 -->
+<article class="border-b border-terminal-border pb-3">
+<div class="flex items-center space-x-2 text-[10px] mb-1">
+<span class="text-terminal-amber">14:15:20</span>
+<span class="text-gray-500">[TRADINGVIEW]</span>
+</div>
+<h3 class="text-xs text-white leading-relaxed">CELO/USD breaks through crucial resistance at 0.82; analysts target 0.95 next.</h3>
+</article>
+<!-- News Item 3 -->
+<article class="border-b border-terminal-border pb-3">
+<div class="flex items-center space-x-2 text-[10px] mb-1">
+<span class="text-terminal-amber">13:58:02</span>
+<span class="text-gray-500">[REUTERS]</span>
+</div>
+<h3 class="text-xs text-white leading-relaxed">Global FX markets brace for Fed commentary as yields stabilize near 4.25%.</h3>
+</article>
+<!-- News Item 4 -->
+<article class="border-b border-terminal-border pb-3">
+<div class="flex items-center space-x-2 text-[10px] mb-1">
+<span class="text-terminal-amber">13:42:11</span>
+<span class="text-gray-500">[COINDESK]</span>
+</div>
+<h3 class="text-xs text-white leading-relaxed">Layer 2 transition on Celo network seeing high validator participation rates.</h3>
+</article>
+<!-- News Item 5 -->
+<article class="border-b border-terminal-border pb-3">
+<div class="flex items-center space-x-2 text-[10px] mb-1">
+<span class="text-terminal-amber">13:20:00</span>
+<span class="text-gray-500">[TRADINGVIEW]</span>
+</div>
+<h3 class="text-xs text-white leading-relaxed">Bollinger Bands tightening for major stablecoin pairs across the ecosystem.</h3>
+</article>
+</div>
+</div>
+</section>
+<!-- END: Panel 5 -->
+</main>
+<!-- END: Main Dashboard Grid -->
+<!-- BEGIN: Footer Taskbar -->
+<footer class="h-6 bg-[#1a1a1a] border-t border-terminal-border flex items-center px-4 text-[10px] space-x-6 text-gray-500" data-purpose="footer-bar">
+<div class="flex space-x-4">
+<span>CPU: 12%</span>
+<span>MEM: 1.4GB</span>
+<span>NET: 420kb/s</span>
+</div>
+<div class="flex-grow text-center text-terminal-amber marquee">
+      SYSTEM ALERT: UNUSUAL VOLUME DETECTED ON CUSD/USDC PAIR - MONITORING FOR DE-PEG EVENT...
+    </div>
+<div>v4.2.1-STABLE</div>
+</footer>
+<!-- END: Footer Taskbar -->
+<!-- BEGIN: Logic Script -->
+<script data-purpose="clock-logic">
+    function updateClock() {
+      const now = new Date();
+      const h = String(now.getUTCHours()).padStart(2, '0');
+      const m = String(now.getUTCMinutes()).padStart(2, '0');
+      const s = String(now.getUTCSeconds()).padStart(2, '0');
+      document.getElementById('utc-clock').textContent = `${h}:${m}:${s}`;
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+  </script>
+<!-- END: Logic Script -->
+</body></html>

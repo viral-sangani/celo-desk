@@ -1,0 +1,89 @@
+"use client";
+
+import { useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
+
+function getSentimentColor(sentiment?: string): string {
+  if (sentiment === "bullish") return "text-terminal-green";
+  if (sentiment === "bearish") return "text-red-400";
+  return "text-gray-400";
+}
+
+export default function KOLFeed() {
+  const tweets = useQuery(api.latestIntel.getKolTweets, { limit: 10 });
+
+  return (
+    <div className="border border-terminal-border bg-[#0a0a0a]">
+      <div className="flex items-center justify-between px-3 py-2 border-b border-terminal-border">
+        <span className="text-[10px] text-gray-500 uppercase tracking-wider">
+          KOL Tracker (Crypto Influencers)
+        </span>
+        <span className="text-[9px] text-terminal-amber">AI-Generated Summaries</span>
+      </div>
+      <div className="max-h-[400px] overflow-y-auto">
+        {!tweets || tweets.length === 0 ? (
+          <div className="p-6 text-center text-xs text-gray-600">
+            Waiting for KOL data... X API will fetch latest tweets from key influencers.
+          </div>
+        ) : (
+          tweets.map((tweet) => {
+            const time = new Date(tweet.timestamp);
+            const timeStr = `${String(time.getHours()).padStart(2, "0")}:${String(time.getMinutes()).padStart(2, "0")}`;
+            const handle = (tweet.handle ?? "").replace(/^@/, "");
+            const profileUrl = handle ? `https://x.com/${handle}` : null;
+            return (
+              <div
+                key={tweet._id}
+                className="px-3 py-2.5 border-b border-terminal-border/50 hover:bg-white/[0.02]"
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-[10px] text-gray-600">{timeStr}</span>
+                  {profileUrl ? (
+                    <a
+                      href={profileUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs font-bold text-purple-400 hover:text-purple-300"
+                    >
+                      @{handle}
+                    </a>
+                  ) : (
+                    <span className="text-xs font-bold text-purple-400">
+                      {tweet.handle}
+                    </span>
+                  )}
+                  <span className="text-[10px] text-gray-600">{tweet.name}</span>
+                  {tweet.sentiment && (
+                    <span
+                      className={`text-[9px] font-bold uppercase ${getSentimentColor(tweet.sentiment)}`}
+                    >
+                      {tweet.sentiment}
+                    </span>
+                  )}
+                  {tweet.tokens && (
+                    <span className="text-[9px] text-gray-600">
+                      {tweet.tokens}
+                    </span>
+                  )}
+                </div>
+                <div className="text-xs text-gray-300 leading-relaxed">
+                  {tweet.text}
+                </div>
+                {profileUrl && (
+                  <a
+                    href={profileUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[10px] text-terminal-green hover:underline mt-1 inline-block"
+                  >
+                    @{handle} on X &rarr;
+                  </a>
+                )}
+              </div>
+            );
+          })
+        )}
+      </div>
+    </div>
+  );
+}

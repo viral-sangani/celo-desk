@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>CELO DESK | AI-Driven On-Chain Trading Terminal</title>
+<!-- Google Fonts: JetBrains Mono for that technical terminal feel -->
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS v3 CDN -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'terminal-black': '#000000',
+            'terminal-green': '#00FF41',
+            'terminal-amber': '#FFB800',
+            'terminal-gray': '#1A1A1A',
+            'terminal-border': '#333333',
+          },
+          fontFamily: {
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+        },
+      },
+    }
+  </script>
+<style data-purpose="global-styles">
+    body {
+      background-color: #000000;
+      color: #FFFFFF;
+      font-family: 'JetBrains Mono', monospace;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    /* Sharp edges for everything */
+    * {
+      border-radius: 0 !important;
+    }
+    .glitch-hover:hover {
+      text-shadow: 2px 0 #00FF41, -2px 0 #FF0000;
+    }
+    .scanline {
+      width: 100%;
+      height: 100px;
+      z-index: 10;
+      background: linear-gradient(0deg, rgba(0, 0, 0, 0) 0%, rgba(0, 255, 65, 0.05) 50%, rgba(0, 0, 0, 0) 100%);
+      opacity: 0.1;
+      position: absolute;
+      bottom: 100%;
+      animation: scanline 10s linear infinite;
+    }
+    @keyframes scanline {
+      0% { bottom: 100%; }
+      100% { bottom: -100px; }
+    }
+    .pulse {
+      animation: pulse-animation 2s infinite;
+    }
+    @keyframes pulse-animation {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 255, 65, 0.7); }
+      70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(0, 255, 65, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 255, 65, 0); }
+    }
+  </style>
+</head>
+<body class="overflow-x-hidden selection:bg-terminal-green selection:text-black">
+<!-- BEGIN: Navigation -->
+<nav class="border-b border-terminal-border bg-black sticky top-0 z-50 px-6 py-4 flex items-center justify-between" data-purpose="main-navigation">
+<div class="flex items-center gap-10">
+<a class="text-xl font-bold tracking-tighter text-terminal-green flex items-center gap-2" href="#">
+<span class="bg-terminal-green text-black px-1">CELO</span> DESK
+      </a>
+<div class="hidden md:flex gap-8 text-sm uppercase tracking-widest font-medium">
+<a class="hover:text-terminal-green transition-colors" href="#features">Features</a>
+<a class="hover:text-terminal-green transition-colors" href="#">Docs</a>
+<a class="hover:text-terminal-green transition-colors" href="#">API</a>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<div class="hidden lg:block text-[10px] text-zinc-500 uppercase tracking-widest border-r border-terminal-border pr-6">
+        SYS_LATENCY: <span class="text-terminal-green">12ms</span>
+</div>
+<button class="border border-terminal-green text-terminal-green px-4 py-2 text-xs uppercase tracking-widest hover:bg-terminal-green hover:text-black transition-all duration-300 font-bold">
+        Launch App
+      </button>
+</div>
+</nav>
+<!-- END: Navigation -->
+<!-- BEGIN: Hero Section -->
+<section class="relative min-h-[80vh] flex flex-col items-center justify-center px-6 py-20 text-center overflow-hidden" data-purpose="hero-section">
+<div class="scanline"></div>
+<!-- Background Grid Effect -->
+<div class="absolute inset-0 z-0 opacity-20 pointer-events-none" style="background-image: radial-gradient(#333 1px, transparent 1px); background-size: 40px 40px;"></div>
+<div class="relative z-10 max-w-5xl mx-auto">
+<div class="inline-block border border-terminal-green/30 px-3 py-1 mb-6">
+<span class="text-[10px] text-terminal-green uppercase tracking-[0.3em] font-bold">v4.2.1-STABLE // SYSTEM ACTIVE</span>
+</div>
+<h1 class="text-4xl md:text-6xl lg:text-7xl font-bold uppercase tracking-tight leading-tight mb-8">
+        The Terminal for <span class="text-terminal-green">AI-Driven</span> <br class="hidden md:block"/> On-Chain Trading.
+      </h1>
+<p class="text-zinc-400 text-lg md:text-xl max-w-3xl mx-auto mb-12 font-light leading-relaxed">
+        Monitor, deploy, and analyze autonomous AI agents trading bluechip tokens and FX pairs on the Celo blockchain. Professional-grade tooling for the decentralized frontier.
+      </p>
+<div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+<button class="w-full sm:w-auto bg-terminal-green text-black px-10 py-4 font-bold uppercase tracking-widest hover:bg-white transition-all">
+          Enter Terminal
+        </button>
+<button class="w-full sm:w-auto border border-terminal-amber text-terminal-amber px-10 py-4 font-bold uppercase tracking-widest hover:bg-terminal-amber hover:text-black transition-all">
+          View Global Analytics
+        </button>
+</div>
+</div>
+<!-- Live Data Ticker -->
+<div class="absolute bottom-0 left-0 w-full border-t border-terminal-border bg-black/80 py-2 overflow-hidden whitespace-nowrap">
+<div class="flex gap-12 text-[10px] uppercase tracking-widest animate-marquee items-center">
+<span class="text-terminal-green"><span class="text-zinc-500">CELO/USD:</span> 0.8421 (+4.12%)</span>
+<span class="text-terminal-amber"><span class="text-zinc-500">cUSD/USD:</span> 0.9998 (-0.01%)</span>
+<span class="text-terminal-green"><span class="text-zinc-500">cEUR/EUR:</span> 1.0842 (+0.12%)</span>
+<span class="text-terminal-green"><span class="text-zinc-500">BTC:</span> 62,450 (+1.42%)</span>
+<span class="text-terminal-green"><span class="text-zinc-500">TVL:</span> $4,821,090 (+5.2%)</span>
+<span class="text-terminal-green text-zinc-500">|</span>
+<span class="text-terminal-green"><span class="text-zinc-500">CELO/USD:</span> 0.8421 (+4.12%)</span>
+<span class="text-terminal-amber"><span class="text-zinc-500">cUSD/USD:</span> 0.9998 (-0.01%)</span>
+</div>
+</div>
+</section>
+<!-- END: Hero Section -->
+<!-- BEGIN: Product Preview -->
+<section class="bg-terminal-black py-24 px-6 border-y border-terminal-border overflow-hidden" data-purpose="product-preview">
+<div class="max-w-7xl mx-auto relative">
+<!-- Angled Mockup Wrapper -->
+<div class="relative transform transition-transform duration-700 hover:scale-[1.02] border border-terminal-border bg-black p-2 shadow-[0_0_50px_rgba(0,255,65,0.05)]">
+<!-- Header Mockup -->
+<div class="border-b border-terminal-border p-4 flex justify-between items-center mb-1">
+<div class="flex gap-2">
+<div class="w-2 h-2 bg-red-500"></div>
+<div class="w-2 h-2 bg-yellow-500"></div>
+<div class="w-2 h-2 bg-green-500"></div>
+</div>
+<div class="text-[10px] text-zinc-500 font-mono uppercase tracking-[0.2em]">Celo Desk Dashboard - Mainnet Node_01</div>
+</div>
+<!-- Dashboard Wireframe Content -->
+<div class="grid grid-cols-12 gap-4 h-[500px] overflow-hidden">
+<!-- Left Col: Charts -->
+<div class="col-span-8 border-r border-terminal-border p-4 flex flex-col gap-4">
+<div class="flex justify-between items-end">
+<div>
+<div class="text-[10px] text-zinc-500 uppercase mb-1">Pair: CELO / USD</div>
+<div class="text-3xl font-bold text-terminal-green">0.8421 <span class="text-xs ml-2">+4.12%</span></div>
+</div>
+<div class="flex gap-1">
+<div class="w-4 h-16 bg-zinc-800 self-end"></div>
+<div class="w-4 h-24 bg-zinc-800 self-end"></div>
+<div class="w-4 h-32 bg-terminal-green self-end"></div>
+<div class="w-4 h-20 bg-zinc-800 self-end"></div>
+<div class="w-4 h-28 bg-terminal-green self-end"></div>
+<div class="w-4 h-40 bg-terminal-green self-end"></div>
+</div>
+</div>
+<div class="flex-grow border border-terminal-border/50 relative overflow-hidden bg-zinc-900/10">
+<!-- Mock Chart Line -->
+<svg class="absolute inset-0 w-full h-full" preserveaspectratio="none">
+<path d="M0 300 Q 100 280 200 320 T 400 250 T 600 200 T 800 280" fill="none" stroke="#00FF41" stroke-width="2"></path>
+</svg>
+<div class="absolute inset-0 flex items-center justify-center opacity-10">
+<span class="text-[80px] font-bold">ANALYTICS</span>
+</div>
+</div>
+</div>
+<!-- Right Col: Feed -->
+<div class="col-span-4 p-4 flex flex-col gap-6">
+<div>
+<div class="text-[10px] text-terminal-amber uppercase font-bold mb-4 tracking-widest border-b border-terminal-amber/30 pb-1">Live Feed</div>
+<div class="space-y-3 font-mono text-[10px]">
+<div class="flex gap-2"><span class="text-zinc-500">14:32</span> <span class="text-terminal-green">[BUY]</span> <span class="text-zinc-300">Agent_Alpha: 500 CELO</span></div>
+<div class="flex gap-2"><span class="text-zinc-500">14:31</span> <span class="text-terminal-amber">[FEES]</span> <span class="text-zinc-300">Collected 1.12 USDC</span></div>
+<div class="flex gap-2"><span class="text-zinc-500">14:30</span> <span class="text-terminal-green">[INIT]</span> <span class="text-zinc-300">New Agent Sentinel_v2</span></div>
+<div class="flex gap-2"><span class="text-zinc-500">14:28</span> <span class="text-red-500">[WARN]</span> <span class="text-zinc-300">High volatility detected</span></div>
+</div>
+</div>
+<div class="flex-grow border border-terminal-border/30 p-4">
+<div class="text-[10px] text-zinc-500 mb-2 uppercase">Agent Performance</div>
+<div class="w-full h-2 bg-zinc-900 mb-2"><div class="w-3/4 h-full bg-terminal-green"></div></div>
+<div class="w-full h-2 bg-zinc-900 mb-2"><div class="w-1/2 h-full bg-terminal-amber"></div></div>
+<div class="w-full h-2 bg-zinc-900 mb-2"><div class="w-2/3 h-full bg-terminal-green"></div></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Tech Overlay Labels -->
+<div class="absolute -top-6 -left-6 border border-terminal-border bg-black px-4 py-2 hidden xl:block">
+<span class="text-[10px] text-zinc-500 uppercase">Mento_FX_Feed: Live</span>
+</div>
+<div class="absolute -bottom-6 -right-6 border border-terminal-border bg-black px-4 py-2 hidden xl:block">
+<span class="text-[10px] text-terminal-green uppercase">Sync_Status: 100%</span>
+</div>
+</div>
+</section>
+<!-- END: Product Preview -->
+<!-- BEGIN: Features Section -->
+<section class="py-24 px-6 max-w-7xl mx-auto" data-purpose="key-features" id="features">
+<div class="grid grid-cols-1 md:grid-cols-3 gap-0 border border-terminal-border">
+<!-- Feature 1 -->
+<div class="p-10 border-b md:border-b-0 md:border-r border-terminal-border hover:bg-zinc-950 transition-colors group">
+<div class="w-12 h-12 border border-terminal-green flex items-center justify-center mb-8 text-terminal-green group-hover:bg-terminal-green group-hover:text-black transition-all">
+<svg fill="none" height="24" stroke="currentColor" stroke-linecap="square" stroke-linejoin="arcs" stroke-width="2" viewbox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" x2="12" y1="22.08" y2="12"></line></svg>
+</div>
+<h3 class="text-xl font-bold uppercase mb-4 tracking-tighter">AI Agent Ecosystem</h3>
+<p class="text-zinc-500 text-sm leading-relaxed mb-6">
+          Deploy autonomous traders with custom strategies. Leverage our SDK to build LLM-powered agents that react to market sentiment and on-chain triggers.
+        </p>
+<div class="text-[10px] text-terminal-green font-bold tracking-[0.2em] uppercase">Status: Operational</div>
+</div>
+<!-- Feature 2 -->
+<div class="p-10 border-b md:border-b-0 md:border-r border-terminal-border hover:bg-zinc-950 transition-colors group">
+<div class="w-12 h-12 border border-terminal-green flex items-center justify-center mb-8 text-terminal-green group-hover:bg-terminal-green group-hover:text-black transition-all">
+<svg fill="none" height="24" stroke="currentColor" stroke-linecap="square" stroke-linejoin="arcs" stroke-width="2" viewbox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><line x1="18" x2="18" y1="20" y2="10"></line><line x1="12" x2="12" y1="20" y2="4"></line><line x1="6" x2="6" y1="20" y2="14"></line></svg>
+</div>
+<h3 class="text-xl font-bold uppercase mb-4 tracking-tighter">Bloomberg-Grade Data</h3>
+<p class="text-zinc-500 text-sm leading-relaxed mb-6">
+          Low-latency feeds for Mento FX pairs and Celo tokens. Access institutional-quality pricing, depth-of-book, and volume analytics in real-time.
+        </p>
+<div class="text-[10px] text-terminal-green font-bold tracking-[0.2em] uppercase">Latency: &lt; 50ms</div>
+</div>
+<!-- Feature 3 -->
+<div class="p-10 hover:bg-zinc-950 transition-colors group">
+<div class="w-12 h-12 border border-terminal-green flex items-center justify-center mb-8 text-terminal-green group-hover:bg-terminal-green group-hover:text-black transition-all">
+<svg fill="none" height="24" stroke="currentColor" stroke-linecap="square" stroke-linejoin="arcs" stroke-width="2" viewbox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10"></circle><line x1="2" x2="22" y1="12" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+</div>
+<h3 class="text-xl font-bold uppercase mb-4 tracking-tighter">Global Analytics</h3>
+<p class="text-zinc-500 text-sm leading-relaxed mb-6">
+          Real-time platform-wide health and performance metrics. Visualize capital flows, agent success rates, and ecosystem TVL across the Celo network.
+        </p>
+<div class="text-[10px] text-terminal-green font-bold tracking-[0.2em] uppercase">Index: Mainnet_01</div>
+</div>
+</div>
+</section>
+<!-- END: Features Section -->
+<!-- BEGIN: CTA Section -->
+<section class="py-24 px-6 border-t border-terminal-border bg-zinc-950/30" data-purpose="cta">
+<div class="max-w-4xl mx-auto text-center">
+<h2 class="text-3xl md:text-5xl font-bold uppercase tracking-tighter mb-8">Ready to automate your <span class="text-terminal-amber">capital?</span></h2>
+<p class="text-zinc-500 mb-12 max-w-2xl mx-auto">Join the next generation of algorithmic traders on the most efficient blockchain for stablecoins and real-world assets.</p>
+<div class="flex flex-col sm:flex-row justify-center gap-4">
+<input class="bg-black border border-terminal-border text-terminal-green px-4 py-4 w-full sm:w-80 focus:ring-0 focus:border-terminal-green placeholder:text-zinc-700 text-sm font-mono" placeholder="Enter ETH/Celo Address..." type="text"/>
+<button class="bg-terminal-green text-black px-8 py-4 font-bold uppercase tracking-widest hover:bg-white transition-all">Whitelist Access</button>
+</div>
+</div>
+</section>
+<!-- END: CTA Section -->
+<!-- BEGIN: Footer -->
+<footer class="border-t border-terminal-border bg-black py-12 px-6" data-purpose="site-footer">
+<div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
+<!-- Logo and Links -->
+<div class="flex flex-col items-center md:items-start gap-4">
+<div class="text-lg font-bold tracking-tighter text-terminal-green">
+<span class="bg-terminal-green text-black px-1">CELO</span> DESK
+        </div>
+<div class="flex gap-6 text-[10px] uppercase tracking-widest text-zinc-500">
+<a class="hover:text-white" href="#">X / Twitter</a>
+<a class="hover:text-white" href="#">Discord</a>
+<a class="hover:text-white" href="#">GitHub</a>
+<a class="hover:text-white" href="#">Celo Foundation</a>
+</div>
+</div>
+<!-- System Status -->
+<div class="flex items-center gap-4 border border-terminal-border px-4 py-2 bg-zinc-900/20">
+<div class="w-2 h-2 bg-terminal-green pulse rounded-full"></div>
+<div class="text-[10px] uppercase tracking-[0.2em] font-bold">
+          System Status: <span class="text-terminal-green">Operational</span>
+</div>
+</div>
+<!-- Copyright -->
+<div class="text-[10px] uppercase tracking-widest text-zinc-600">
+        © 2024 CELO DESK ANALYTICS. <span class="hidden sm:inline">ALL RIGHTS RESERVED.</span>
+</div>
+</div>
+</footer>
+<!-- END: Footer -->
+<style data-purpose="animations">
+    @keyframes marquee {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+    .animate-marquee {
+      display: inline-flex;
+      animation: marquee 30s linear infinite;
+      width: max-content;
+    }
+    .animate-marquee:hover {
+      animation-play-state: paused;
+    }
+  </style>
+</body></html>
