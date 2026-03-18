@@ -32,6 +32,24 @@ export const getLatestAll = query({
   },
 });
 
+export const getLatestForTokens = query({
+  args: { tokens: v.array(v.string()) },
+  handler: async (ctx, args) => {
+    const results = [];
+    for (const token of args.tokens) {
+      const price = await ctx.db
+        .query("prices")
+        .withIndex("by_token", (q) => q.eq("token", token))
+        .order("desc")
+        .first();
+      if (price) {
+        results.push(price);
+      }
+    }
+    return results;
+  },
+});
+
 const TIMEFRAME_MS: Record<string, number> = {
   "1H": 60 * 60 * 1000,
   "4H": 4 * 60 * 60 * 1000,
