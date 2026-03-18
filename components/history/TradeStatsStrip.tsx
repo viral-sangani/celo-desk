@@ -1,12 +1,13 @@
 "use client";
 
-import { useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
+import { Doc } from "@/convex/_generated/dataModel";
 import { formatUsd } from "@/lib/format";
 
-export default function TradeStatsStrip() {
-  const trades = useQuery(api.tradeHistory.getAllTrades, { limit: 500 });
+interface TradeStatsStripProps {
+  trades: Doc<"trades">[] | undefined;
+}
 
+export default function TradeStatsStrip({ trades }: TradeStatsStripProps) {
   if (!trades) {
     return (
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3">

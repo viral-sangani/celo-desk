@@ -1,14 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
 import { Doc } from "@/convex/_generated/dataModel";
 import ReasonModal from "./ReasonModal";
 import GlassTooltip from "@/components/ui/GlassTooltip";
 
-export default function TradeHistoryTable() {
-  const trades = useQuery(api.tradeHistory.getAllTrades, { limit: 100 });
+interface TradeHistoryTableProps {
+  trades: Doc<"trades">[] | undefined;
+}
+
+export default function TradeHistoryTable({ trades }: TradeHistoryTableProps) {
   const [selectedTrade, setSelectedTrade] = useState<Doc<"trades"> | null>(null);
 
   if (!trades) {

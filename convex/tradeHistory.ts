@@ -34,3 +34,22 @@ export const getAllTrades = query({
       .take(limit);
   },
 });
+
+export const getTradesForUser = query({
+  args: { userAddress: v.string(), limit: v.optional(v.float64()) },
+  handler: async (ctx, args) => {
+    const agent = await ctx.db
+      .query("agents")
+      .withIndex("by_userAddress", (q) =>
+        q.eq("userAddress", args.userAddress.toLowerCase())
+      )
+      .first();
+    if (!agent) return [];
+    const limit = args.limit ?? 100;
+    return await ctx.db
+      .query("trades")
+      .withIndex("by_agent", (q) => q.eq("agentId", agent._id))
+      .order("desc")
+      .take(limit);
+  },
+});
