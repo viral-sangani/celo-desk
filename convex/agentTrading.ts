@@ -533,22 +533,20 @@ export const refreshPortfolio = action({
       agentId: agent._id,
       holdings,
     });
-    // Calculate P/L per token: current value vs cost basis (what was spent to buy it)
+    // Calculate P/L: current value of traded tokens vs what was spent to buy them
     const costBasis = await ctx.runQuery(internal.agentTradingInternal.getCostBasisPerToken, { agentId: agent._id });
     let totalCostBasis = 0;
-    let totalCurrentValue = 0;
+    let tradedTokensValue = 0;
     for (const h of holdings) {
       const spent = costBasis[h.token] ?? 0;
-      totalCostBasis += spent;
-      totalCurrentValue += h.valueUsd;
-    }
-    // Add USDT cost basis (USDT wasn't "bought", it was deposited, so cost = amount)
-    const usdtHolding = holdings.find((h) => h.token === "USDT");
-    if (usdtHolding) {
-      totalCostBasis += usdtHolding.valueUsd; // USDT cost basis = its value (1:1)
+      if (spent > 0) {
+        // Only count tokens that were actually bought (have cost basis from trades)
+        totalCostBasis += spent;
+        tradedTokensValue += h.valueUsd;
+      }
     }
 
-    const pnl = totalValue - totalCostBasis;
+    const pnl = tradedTokensValue - totalCostBasis;
     const pnlPercent = totalCostBasis > 0 ? (pnl / totalCostBasis) * 100 : 0;
 
     await ctx.runMutation(internal.agentTradingMutations.updateAgentMetrics, {

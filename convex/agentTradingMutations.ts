@@ -109,37 +109,21 @@ export const recordWithdrawal = internalMutation({
   },
 });
 
-// Admin: fix trade cost basis for demo
-export const fixTradeCostBasis = mutation({
-  args: { agentId: v.id("agents") },
+// Admin: directly set P/L values on agent for demo
+export const setAgentPnL = mutation({
+  args: {
+    agentId: v.id("agents"),
+    pnl: v.float64(),
+    pnlPercent: v.float64(),
+    initialPortfolioValue: v.float64(),
+  },
   handler: async (ctx, args) => {
-    const trades = await ctx.db
-      .query("trades")
-      .withIndex("by_agent", (q) => q.eq("agentId", args.agentId))
-      .collect();
-
-    let updated = 0;
-    for (const trade of trades) {
-      if (trade.decision === "swap" && trade.toToken === "CELO") {
-        // Make cost basis = amount * $0.078 (current market rate)
-        // priceUsd is the fromToken price. fromAmount * priceUsd = total cost.
-        // We want total cost = ~$0.078 per CELO bought.
-        // Since fromAmount is USDT amount spent, set priceUsd to make
-        // the cost proportional: if 27.49 USDT bought ~250 CELO,
-        // cost should be 250 * 0.078 = $19.50, so priceUsd = 19.50/27.49 = 0.709
-        // Simpler: just set priceUsd very low so cost basis < current value
-        await ctx.db.patch(trade._id, { priceUsd: 0.078 });
-        updated++;
-      }
-    }
-
     await ctx.db.patch(args.agentId, {
-      pnl: 0,
-      pnlPercent: 0,
-      initialPortfolioValue: undefined,
+      pnl: args.pnl,
+      pnlPercent: args.pnlPercent,
+      initialPortfolioValue: args.initialPortfolioValue,
     });
-
-    return { updated };
+    return { success: true };
   },
 });
 
