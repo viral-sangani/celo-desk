@@ -30,11 +30,17 @@ const DECIMALS: Record<string, number> = {
 };
 
 const UNISWAP_ROUTER = "0x5615CDAb10dc425a742d643d949a7F474C01abc4";
+const UNISWAP_QUOTER = "0x82825d0554fA07f7FC52Ab63c961F330fdEFa8E8"; // Uniswap V3 QuoterV2 on Celo
 
 // Celo fee abstraction: USDT fee currency adapter
 // Allows paying gas fees with USDT instead of native CELO
 // See: https://docs.celo.org/tooling/overview/fee-abstraction
 const USDT_FEE_ADAPTER = "0x0e2a3e05bc9a16f5292a6170456a710cb89c6f72";
+
+// Safety limits
+const MAX_TRADE_USD = 10; // Max $10 per trade to avoid draining thin pools
+const TRADE_COOLDOWN_MS = 5 * 60 * 1000; // 5 minute cooldown between trades
+const MAX_SLIPPAGE_BPS = 200; // 2% max slippage (200 basis points)
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -106,6 +112,58 @@ async function getViemAccount(userAddress: string) {
   return viemPKToAccount(`0x${hash}` as `0x${string}`);
 }
 
+async function getQuote(
+  publicClient: any,
+  fromTokenAddr: string,
+  toTokenAddr: string,
+  amountIn: bigint
+): Promise<bigint> {
+  const { encodeFunctionData, decodeFunctionResult } = await import("viem");
+
+  const quoteData = encodeFunctionData({
+    abi: [{
+      name: "quoteExactInputSingle",
+      type: "function",
+      stateMutability: "nonpayable",
+      inputs: [{
+        name: "params",
+        type: "tuple",
+        components: [
+          { name: "tokenIn", type: "address" },
+          { name: "tokenOut", type: "address" },
+          { name: "amountIn", type: "uint256" },
+          { name: "fee", type: "uint24" },
+          { name: "sqrtPriceLimitX96", type: "uint160" },
+        ],
+      }],
+      outputs: [
+        { name: "amountOut", type: "uint256" },
+        { name: "sqrtPriceX96After", type: "uint160" },
+        { name: "initializedTicksCrossed", type: "uint32" },
+        { name: "gasEstimate", type: "uint256" },
+      ],
+    }],
+    functionName: "quoteExactInputSingle",
+    args: [{
+      tokenIn: fromTokenAddr as `0x${string}`,
+      tokenOut: toTokenAddr as `0x${string}`,
+      amountIn,
+      fee: 3000,
+      sqrtPriceLimitX96: BigInt(0),
+    }],
+  });
+
+  const result = await publicClient.call({
+    to: UNISWAP_QUOTER as `0x${string}`,
+    data: quoteData,
+  });
+
+  // First 32 bytes of the return data is the amountOut
+  if (!result.data) throw new Error("Quoter returned no data");
+  const amountOut = BigInt(`0x${result.data.slice(2, 66)}`);
+  return amountOut;
+}
+
 async function executeSwap(
   client: any,
   account: any,
@@ -117,7 +175,6 @@ async function executeSwap(
   const { createPublicClient, createWalletClient, http, encodeFunctionData } = await import("viem");
   const { celo: celoChain } = await import("viem/chains");
 
-  // Get viem account (needed for feeCurrency support)
   const viemAccount = await getViemAccount(userAddress);
 
   const publicClient = createPublicClient({
@@ -131,7 +188,19 @@ async function executeSwap(
     transport: http(),
   });
 
-  // Step 1: Approve router for the input token (with fee abstraction)
+  // Step 1: Get quote from Uniswap Quoter for slippage protection
+  let amountOutMinimum = BigInt(0);
+  try {
+    const quotedOutput = await getQuote(publicClient, fromTokenAddr, toTokenAddr, amountIn);
+    // Apply slippage tolerance: accept up to MAX_SLIPPAGE_BPS less than quoted
+    amountOutMinimum = (quotedOutput * BigInt(10000 - MAX_SLIPPAGE_BPS)) / BigInt(10000);
+    console.log(`Quote: ${quotedOutput.toString()}, min acceptable: ${amountOutMinimum.toString()}`);
+  } catch (err) {
+    console.error("Quoter failed, skipping trade for safety:", err);
+    throw new Error("Could not get price quote — skipping trade to prevent slippage loss");
+  }
+
+  // Step 2: Approve router for the input token
   const approveData = encodeFunctionData({
     abi: [{
       name: "approve",
@@ -154,7 +223,7 @@ async function executeSwap(
   });
   await publicClient.waitForTransactionReceipt({ hash: approveHash });
 
-  // Step 2: Execute swap on Uniswap V3 (with fee abstraction)
+  // Step 3: Execute swap with slippage protection
   const swapData = encodeFunctionData({
     abi: [{
       name: "exactInputSingle",
@@ -182,7 +251,7 @@ async function executeSwap(
       fee: 3000,
       recipient: viemAccount.address,
       amountIn,
-      amountOutMinimum: BigInt(0),
+      amountOutMinimum,
       sqrtPriceLimitX96: BigInt(0),
     }],
   });
@@ -192,7 +261,7 @@ async function executeSwap(
     data: swapData,
     feeCurrency: USDT_FEE_ADAPTER as `0x${string}`,
   });
-  const receipt = await publicClient.waitForTransactionReceipt({ hash: swapHash });
+  await publicClient.waitForTransactionReceipt({ hash: swapHash });
 
   return { transactionHash: swapHash };
 }
@@ -468,7 +537,18 @@ export const executeTradeNow = action({
         const fromBalance = balances.find((b) => b.token === decision.fromToken);
         if (!fromBalance) return { success: true, decision: `hold (no ${decision.fromToken} balance)` };
 
-        const swapAmount = fromBalance.amount * (decision.amountPercent / 100);
+        const fromPrice = prices.find((p: any) => p.token === decision.fromToken)?.priceUsd ?? 0;
+        let swapAmount = fromBalance.amount * (decision.amountPercent / 100);
+
+        // Cap trade size to MAX_TRADE_USD to avoid draining thin liquidity pools
+        if (fromPrice > 0) {
+          const swapValueUsd = swapAmount * fromPrice;
+          if (swapValueUsd > MAX_TRADE_USD) {
+            swapAmount = MAX_TRADE_USD / fromPrice;
+            console.log(`Capped trade from $${swapValueUsd.toFixed(2)} to $${MAX_TRADE_USD}`);
+          }
+        }
+
         const amountInWei = BigInt(Math.floor(swapAmount * 10 ** fromBalance.decimals));
         if (amountInWei <= BigInt(0)) return { success: true, decision: "hold (amount too small)" };
 
@@ -477,7 +557,6 @@ export const executeTradeNow = action({
         if (!fromAddr || !toAddr) return { success: true, decision: "hold (unknown token address)" };
 
         const result = await executeSwap(client, account, fromAddr, toAddr, amountInWei, addr);
-        const fromPrice = prices.find((p: any) => p.token === decision.fromToken)?.priceUsd ?? 0;
 
         await ctx.runMutation(internal.agentTradingMutations.recordTrade, {
           agentId: agent._id, fromToken: decision.fromToken, toToken: decision.toToken,
@@ -531,6 +610,12 @@ export const executeTrades = internalAction({
 
     for (const agent of agents) {
       if (!agent.userAddress) continue;
+
+      // Cooldown: skip if last trade was less than 5 minutes ago
+      if (agent.lastTradeAt && (Date.now() - agent.lastTradeAt) < TRADE_COOLDOWN_MS) {
+        console.log(`Agent ${agent.name}: cooldown active, skipping`);
+        continue;
+      }
 
       try {
         const { client, account } = await getAgentAccount(agent.userAddress);
@@ -599,7 +684,19 @@ export const executeTrades = internalAction({
             continue;
           }
 
-          const swapAmount = fromBalance.amount * (decision.amountPercent / 100);
+          const fromPrice =
+            prices.find((p: any) => p.token === decision.fromToken)?.priceUsd ?? 0;
+          let swapAmount = fromBalance.amount * (decision.amountPercent / 100);
+
+          // Cap trade size to MAX_TRADE_USD
+          if (fromPrice > 0) {
+            const swapValueUsd = swapAmount * fromPrice;
+            if (swapValueUsd > MAX_TRADE_USD) {
+              swapAmount = MAX_TRADE_USD / fromPrice;
+              console.log(`Capped trade from $${swapValueUsd.toFixed(2)} to $${MAX_TRADE_USD}`);
+            }
+          }
+
           const amountInWei = BigInt(Math.floor(swapAmount * 10 ** fromBalance.decimals));
 
           if (amountInWei <= BigInt(0)) continue;
@@ -610,8 +707,6 @@ export const executeTrades = internalAction({
 
           const result = await executeSwap(client, account, fromAddr, toAddr, amountInWei, agent.userAddress!);
 
-          const fromPrice =
-            prices.find((p: any) => p.token === decision.fromToken)?.priceUsd ?? 0;
           const platformFee = swapAmount * fromPrice * 0.001; // 0.1% platform fee
 
           await ctx.runMutation(internal.agentTradingMutations.recordTrade, {
