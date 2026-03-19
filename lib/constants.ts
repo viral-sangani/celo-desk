@@ -19,7 +19,7 @@ export const COLORS = {
   },
 } as const;
 
-export const APP_VERSION = "4.2.1";
+export const APP_VERSION = "1.3.4";
 
 export const TOKEN_COLORS: Record<string, string> = {
   CELO: "#00ff41",

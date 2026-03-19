@@ -48,31 +48,6 @@ const steps = [
   { num: "03", title: "Fund & Deploy", description: "Deposit USDT to your agent. It starts trading automatically every 5 minutes using Gemini AI." },
 ];
 
-const tokens = [
-  { symbol: "CELO", name: "Celo", color: "#35d07f" },
-  { symbol: "USDT", name: "Tether", color: "#26A17B" },
-  { symbol: "USDC", name: "USD Coin", color: "#2775CA" },
-  { symbol: "BTC", name: "Bitcoin", color: "#F7931A" },
-  { symbol: "ETH", name: "Ethereum", color: "#627EEA" },
-  { symbol: "XAUt", name: "Tether Gold", color: "#CFB53B" },
-  { symbol: "USDm", name: "Mento Dollar", color: "#ffb400" },
-  { symbol: "EURm", name: "Mento Euro", color: "#3b82f6" },
-  { symbol: "BRLm", name: "Mento Real", color: "#00b341" },
-  { symbol: "KESm", name: "Mento Shilling", color: "#e74c3c" },
-  { symbol: "COPm", name: "Mento Peso", color: "#f39c12" },
-  { symbol: "PHPm", name: "Mento PHP", color: "#9b59b6" },
-];
-
-const poweredBy = [
-  { name: "Celo", color: "#35d07f" },
-  { name: "Gemini AI", color: "#4285F4" },
-  { name: "Grok", color: "#9333ea" },
-  { name: "CoinGecko", color: "#8bc53f" },
-  { name: "TradingView", color: "#2962FF" },
-  { name: "Convex", color: "#f97316" },
-  { name: "Thirdweb", color: "#a855f7" },
-];
-
 export default function LandingPage() {
   return (
     <div className="bg-black text-white font-mono selection:bg-[#00FF41] selection:text-black">
@@ -419,26 +394,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Supported Tokens */}
-      <section className="px-4 sm:px-6 py-12 sm:py-16 border-t border-[#222] bg-[#0a0a0a]">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-8">
-            <div className="text-[10px] text-gray-500 uppercase tracking-[0.3em] font-bold mb-2">SUPPORTED ASSETS</div>
-            <h3 className="text-lg sm:text-2xl font-bold uppercase tracking-tight">
-              Trade Across the <span className="text-[#00FF41]">Celo Ecosystem</span>
-            </h3>
-          </div>
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
-            {tokens.map((t) => (
-              <div key={t.symbol} className="border border-[#222] bg-black p-3 text-center hover:border-gray-500 transition-colors">
-                <div className="text-lg font-bold mb-1" style={{ color: t.color }}>{t.symbol}</div>
-                <div className="text-[10px] text-gray-500">{t.name}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* CTA */}
       <section className="px-4 sm:px-6 py-16 sm:py-24 text-center border-t border-[#222]">
         <div className="max-w-3xl mx-auto">
@@ -456,24 +411,6 @@ export default function LandingPage() {
           >
             Launch Terminal
           </Link>
-        </div>
-      </section>
-
-      {/* Powered By */}
-      <section className="px-4 sm:px-6 py-8 border-t border-[#222] bg-[#0a0a0a]">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-[10px] text-gray-600 uppercase tracking-[0.3em] text-center mb-4">Powered By</div>
-          <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-8">
-            {poweredBy.map((p) => (
-              <span
-                key={p.name}
-                className="text-xs sm:text-sm font-bold uppercase tracking-wider opacity-50 hover:opacity-100 transition-opacity"
-                style={{ color: p.color }}
-              >
-                {p.name}
-              </span>
-            ))}
-          </div>
         </div>
       </section>
 
