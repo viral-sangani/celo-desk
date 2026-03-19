@@ -30,7 +30,14 @@ export default function SocialSentiment() {
             return (
               <div key={item.token} className="space-y-1">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-white">{item.token}</span>
+                  <a
+                    href={`https://x.com/search?q=%24${item.token}&src=typed_query&f=live`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs font-bold text-white hover:text-terminal-green"
+                  >
+                    {item.token}
+                  </a>
                   <div className="flex items-center gap-2">
                     <span
                       className="text-[10px] font-bold uppercase"
@@ -77,7 +84,7 @@ export default function SocialSentiment() {
         )}
       </div>
       <div className="text-[9px] text-gray-700 mt-2 pt-1 border-t border-terminal-border/50">
-        Powered by X API
+        <span className="text-terminal-amber">AI-Generated Sentiment</span> &middot; Click token to view on X
       </div>
     </div>
   );

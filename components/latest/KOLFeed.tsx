@@ -69,16 +69,28 @@ export default function KOLFeed() {
                 <div className="text-xs text-gray-300 leading-relaxed">
                   {tweet.text}
                 </div>
-                {profileUrl && (
-                  <a
-                    href={profileUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-[10px] text-terminal-green hover:underline mt-1 inline-block"
-                  >
-                    @{handle} on X &rarr;
-                  </a>
-                )}
+                <div className="flex items-center gap-3 mt-1">
+                  {profileUrl && (
+                    <a
+                      href={profileUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[10px] text-terminal-green hover:underline"
+                    >
+                      @{handle} on X &rarr;
+                    </a>
+                  )}
+                  {handle && (
+                    <a
+                      href={`https://x.com/search?q=from%3A${handle}&src=typed_query&f=live`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[10px] text-gray-500 hover:text-terminal-green hover:underline"
+                    >
+                      Latest posts &rarr;
+                    </a>
+                  )}
+                </div>
               </div>
             );
           })

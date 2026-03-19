@@ -22,6 +22,7 @@ export default function NewsFeed() {
           timestamp: formatTimestamp(n.timestamp),
           source: n.source as string,
           headline: n.headline as string,
+          url: (n.url as string) || "",
         }))
       : [];
 
@@ -46,9 +47,20 @@ export default function NewsFeed() {
                     <span className="text-terminal-amber">{item.timestamp}</span>
                     <span className="text-gray-500">[{item.source}]</span>
                   </div>
-                  <h3 className="text-xs text-white leading-relaxed">
-                    {item.headline}
-                  </h3>
+                  {item.url ? (
+                    <a
+                      href={item.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-white leading-relaxed hover:text-terminal-green"
+                    >
+                      {item.headline}
+                    </a>
+                  ) : (
+                    <h3 className="text-xs text-white leading-relaxed">
+                      {item.headline}
+                    </h3>
+                  )}
                 </article>
               ))}
         </div>
