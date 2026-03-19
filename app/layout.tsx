@@ -21,6 +21,10 @@ export const metadata: Metadata = {
   title: "Celo Desk | Financial Terminal",
   description:
     "Bloomberg-style terminal for AI agents trading on Celo blockchain",
+  icons: {
+    icon: "/favicon.png",
+    apple: "/apple-touch-icon.png",
+  },
 };
 
 export default function RootLayout({

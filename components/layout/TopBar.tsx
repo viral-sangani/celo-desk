@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { ConnectButton } from "thirdweb/react";
 import { darkTheme } from "thirdweb/react";
 import { celo } from "thirdweb/chains";
@@ -51,9 +52,20 @@ export default function TopBar({ activeTab = "terminal" }: TopBarProps) {
       {/* Main bar */}
       <div className="h-10 flex items-center justify-between px-3 lg:px-4">
         <div className="flex items-center gap-2 lg:gap-6">
-          <h1 className="text-terminal-amber font-bold tracking-tighter text-base lg:text-lg">
-            CELO DESK
-          </h1>
+          <Link href="/" className="flex items-center gap-2">
+            <Image src="/celodesk-logo.png" alt="Celo Desk" width={28} height={28} className="w-6 h-6 lg:w-7 lg:h-7" />
+            <div className="flex items-center gap-2">
+              <div className="leading-none">
+                <span className="text-[#FFEB3B] font-bold tracking-tight text-sm lg:text-base block leading-none">CELO</span>
+                <span className="text-white font-bold tracking-[0.2em] text-[10px] lg:text-xs block leading-none">DESK</span>
+              </div>
+              <div className="hidden lg:flex items-center gap-2 border-l border-terminal-border pl-2">
+                <span className="text-[10px] text-gray-500 leading-tight uppercase tracking-wider">
+                  AI Agent<br />Trading<br />Terminal
+                </span>
+              </div>
+            </div>
+          </Link>
 
           {/* Desktop nav */}
           <nav className="hidden md:flex items-center gap-1">
