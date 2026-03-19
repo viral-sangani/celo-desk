@@ -17,6 +17,15 @@ const TOKEN_ADDRESSES: Record<string, string> = {
   WETH: "0xD221812de1BD094f35587EE8E174B07B6167D9Af",
   WBTC: "0x8aC2901Dd8A1F17a1A4768A6bA4C3751e3995B2D",
   XAUt: "0xaf37E8B6C9ED7f6318979f56Fc287d76c30847ff",
+  EURm: "0xD8763CBa276a3738E6DE85b4b3bF5FDed6D6cA73",
+  BRLm: "0xe8537a3d056DA446677B9E9d6c5dB704EaAb4787",
+  KESm: "0x456a3D042C0DbD3db53D5489e98dFb038553B0d0",
+  COPm: "0x8A567e2aE79CA692Bd748aB832081C45de4041eA",
+  PHPm: "0x105d4A9306D2E55a71d2Eb95B81553AE1dC20d7B",
+  XOFm: "0x73F93dcc49cB8A239e2032663e9475dd5ef29A08",
+  NGNm: "0xE2702Bd97ee33c88c8f6f92DA3B733608aa76F71",
+  JPYm: "0xc45eCF20f3CD864B32D9794d6f76814aE8892e20",
+  CHFm: "0xb55a79F398E759E43C95b979163f30eC87Ee131D",
 };
 
 const DECIMALS: Record<string, number> = {
@@ -27,6 +36,15 @@ const DECIMALS: Record<string, number> = {
   WETH: 18,
   WBTC: 8,
   XAUt: 6,
+  EURm: 18,
+  BRLm: 18,
+  KESm: 18,
+  COPm: 18,
+  PHPm: 18,
+  XOFm: 18,
+  NGNm: 18,
+  JPYm: 18,
+  CHFm: 18,
 };
 
 const UNISWAP_ROUTER = "0x5615CDAb10dc425a742d643d949a7F474C01abc4";
@@ -41,6 +59,16 @@ const USDT_FEE_ADAPTER = "0x0e2a3e05bc9a16f5292a6170456a710cb89c6f72";
 const MAX_TRADE_USD = 10; // Max $10 per trade to avoid draining thin pools
 const TRADE_COOLDOWN_MS = 5 * 60 * 1000; // 5 minute cooldown between trades
 const MAX_SLIPPAGE_BPS = 200; // 2% max slippage (200 basis points)
+
+// Fee tier mapping — Mento stablecoin pools use 0.01% fee (100), crypto uses 0.3% (3000)
+const STABLECOIN_TOKENS = new Set(["USDT", "USDC", "USDm", "EURm", "BRLm", "KESm", "COPm", "PHPm", "XOFm", "NGNm", "JPYm", "CHFm"]);
+
+function getPoolFee(fromSymbol: string, toSymbol: string): number {
+  // Stablecoin-to-stablecoin: 0.01% fee tier
+  if (STABLECOIN_TOKENS.has(fromSymbol) && STABLECOIN_TOKENS.has(toSymbol)) return 100;
+  // Everything else: 0.3% fee tier
+  return 3000;
+}
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -76,6 +104,15 @@ async function getOnChainBalances(client: any, agentAddress: string) {
     { symbol: "WETH", address: "0xD221812de1BD094f35587EE8E174B07B6167D9Af", decimals: 18 },
     { symbol: "WBTC", address: "0x8aC2901Dd8A1F17a1A4768A6bA4C3751e3995B2D", decimals: 8 },
     { symbol: "XAUt", address: "0xaf37E8B6C9ED7f6318979f56Fc287d76c30847ff", decimals: 6 },
+    { symbol: "EURm", address: "0xD8763CBa276a3738E6DE85b4b3bF5FDed6D6cA73", decimals: 18 },
+    { symbol: "BRLm", address: "0xe8537a3d056DA446677B9E9d6c5dB704EaAb4787", decimals: 18 },
+    { symbol: "KESm", address: "0x456a3D042C0DbD3db53D5489e98dFb038553B0d0", decimals: 18 },
+    { symbol: "COPm", address: "0x8A567e2aE79CA692Bd748aB832081C45de4041eA", decimals: 18 },
+    { symbol: "PHPm", address: "0x105d4A9306D2E55a71d2Eb95B81553AE1dC20d7B", decimals: 18 },
+    { symbol: "XOFm", address: "0x73F93dcc49cB8A239e2032663e9475dd5ef29A08", decimals: 18 },
+    { symbol: "NGNm", address: "0xE2702Bd97ee33c88c8f6f92DA3B733608aa76F71", decimals: 18 },
+    { symbol: "JPYm", address: "0xc45eCF20f3CD864B32D9794d6f76814aE8892e20", decimals: 18 },
+    { symbol: "CHFm", address: "0xb55a79F398E759E43C95b979163f30eC87Ee131D", decimals: 18 },
   ];
 
   const balances: { token: string; amount: number; address: string; decimals: number }[] = [];
@@ -116,7 +153,9 @@ async function getQuote(
   publicClient: any,
   fromTokenAddr: string,
   toTokenAddr: string,
-  amountIn: bigint
+  amountIn: bigint,
+  fromSymbol: string,
+  toSymbol: string
 ): Promise<bigint> {
   const { encodeFunctionData, decodeFunctionResult } = await import("viem");
 
@@ -148,7 +187,7 @@ async function getQuote(
       tokenIn: fromTokenAddr as `0x${string}`,
       tokenOut: toTokenAddr as `0x${string}`,
       amountIn,
-      fee: 3000,
+      fee: getPoolFee(fromSymbol, toSymbol),
       sqrtPriceLimitX96: BigInt(0),
     }],
   });
@@ -170,7 +209,9 @@ async function executeSwap(
   fromTokenAddr: string,
   toTokenAddr: string,
   amountIn: bigint,
-  userAddress: string
+  userAddress: string,
+  fromSymbol: string,
+  toSymbol: string
 ) {
   const { createPublicClient, createWalletClient, http, encodeFunctionData } = await import("viem");
   const { celo: celoChain } = await import("viem/chains");
@@ -191,7 +232,7 @@ async function executeSwap(
   // Step 1: Get quote from Uniswap Quoter for slippage protection
   let amountOutMinimum = BigInt(0);
   try {
-    const quotedOutput = await getQuote(publicClient, fromTokenAddr, toTokenAddr, amountIn);
+    const quotedOutput = await getQuote(publicClient, fromTokenAddr, toTokenAddr, amountIn, fromSymbol, toSymbol);
     // Apply slippage tolerance: accept up to MAX_SLIPPAGE_BPS less than quoted
     amountOutMinimum = (quotedOutput * BigInt(10000 - MAX_SLIPPAGE_BPS)) / BigInt(10000);
     console.log(`Quote: ${quotedOutput.toString()}, min acceptable: ${amountOutMinimum.toString()}`);
@@ -248,7 +289,7 @@ async function executeSwap(
     args: [{
       tokenIn: fromTokenAddr as `0x${string}`,
       tokenOut: toTokenAddr as `0x${string}`,
-      fee: 3000,
+      fee: getPoolFee(fromSymbol, toSymbol),
       recipient: viemAccount.address,
       amountIn,
       amountOutMinimum,
@@ -300,6 +341,8 @@ interface TradingContext {
   sentiment: any[];
   fearGreed: any;
   tokenMeta: any[];
+  fxRates: any[];
+  forexNews: any[];
 }
 
 async function getGeminiDecision(ctx: TradingContext): Promise<any> {
@@ -322,9 +365,28 @@ async function getGeminiDecision(ctx: TradingContext): Promise<any> {
     ? `Fear & Greed Index: ${ctx.fearGreed.value} (${ctx.fearGreed.classification})`
     : "Fear & Greed: unavailable";
 
+  // Build FX rates summary
+  const fxRatesSummary = ctx.fxRates
+    .map((r: any) => `${r.pair}: ${r.price.toFixed(4)} (24h: ${r.change24h >= 0 ? "+" : ""}${r.change24h.toFixed(2)}%, spread: ${r.spread.toFixed(4)})`)
+    .join("\n");
+
+  // Build forex news summary
+  const forexNewsSummary = ctx.forexNews
+    .map((n: any) => `- [${n.source.toUpperCase()}] ${n.title}`)
+    .join("\n");
+
   const prompt = `${ctx.personalityPrompt}
 
-You are managing a crypto portfolio on Celo blockchain. All trades are swaps against USDT.
+You are managing a mixed crypto and FX portfolio on Celo blockchain. All trades are swaps against USDT on Uniswap V3.
+
+Available tokens to trade:
+- FX Stablecoins: USDm, EURm, BRLm, KESm, COPm, PHPm, XOFm, NGNm, JPYm, CHFm (Mento stablecoins pegged to fiat currencies)
+- Crypto: CELO, WETH, WBTC, XAUt (volatile assets)
+- Stablecoins: USDC (USD-pegged)
+
+Use FX rate data and forex news to identify opportunities in Mento stablecoin pairs.
+Use crypto prices and sentiment for crypto trades.
+FX trades are lower risk and more frequent. Crypto trades are higher risk.
 
 Risk Level: ${ctx.riskLevel} (max ${riskMaxPercent}% of any holding per trade, minimum trade $1)
 
@@ -341,6 +403,12 @@ Market Sentiment:
 ${fearGreedText}
 ${sentimentSummary}
 
+FX Rates (Mento Stablecoins vs USDT):
+${fxRatesSummary || "No FX rate data available"}
+
+Forex News:
+${forexNewsSummary || "No forex news available"}
+
 Recent News:
 ${ctx.news}
 
@@ -348,7 +416,7 @@ Based on your personality and the data above, make a trading decision.
 You SHOULD trade when your strategy signals an opportunity — do not default to holding.
 
 Respond with ONLY a valid JSON object, no markdown:
-{"action":"swap","fromToken":"USDT","toToken":"CELO","amountPercent":${riskMaxPercent},"reason":"brief explanation"}
+{"action":"swap","fromToken":"USDT","toToken":"EURm","amountPercent":${riskMaxPercent},"reason":"brief explanation"}
 
 If genuinely no opportunity matches your strategy: {"action":"hold","reason":"brief explanation"}`;
 
@@ -502,6 +570,8 @@ export const executeTradeNow = action({
       const sentiment = await ctx.runQuery(internal.latestIntel.getLatestSentimentInternal, {});
       const fearGreed = await ctx.runQuery(internal.latestIntel.getFearGreedIndexInternal, {});
       const tokenMeta = await ctx.runQuery(internal.latestIntel.getTokenMetadataAllInternal, {});
+      const fxRates = await ctx.runQuery(internal.fxRates.getLatestInternal, {});
+      const forexNews = await ctx.runQuery(internal.latestIntel.getLatestForexNewsInternal, {});
 
       const DEFAULT_PROMPT = `You are an AI trading agent. Buy dips, follow momentum, and take profits. You SHOULD trade when opportunities arise.`;
       let personalityPrompt = DEFAULT_PROMPT;
@@ -509,9 +579,9 @@ export const executeTradeNow = action({
         personalityPrompt = agent.personalityPrompt;
       } else if (agent.personality) {
         const presets: Record<string, string> = {
-          dip_buyer: `You are a mean-reversion trader. BUY when a token drops >3% in 24h. SELL on recovery (+2%). When Fear & Greed < 35, be MORE aggressive. You SHOULD trade on dips.`,
-          momentum: `You are a momentum trader. BUY tokens up >2% with bullish sentiment. SELL when sentiment fades. Use 7d/30d trends to confirm. You SHOULD trade on momentum.`,
-          stablecoin_farmer: `You are a capital-preservation trader. Stay in stablecoins. Only BUY volatile assets on >10% dips. Exit at +3-5% profit. You SHOULD trade on major dips.`,
+          dip_buyer: `You are a mean-reversion trader. For FX: BUY Mento stablecoins (EURm, BRLm, KESm) when depegged >0.5%. For crypto: BUY on >3% dips. SELL on recovery (+2%). You SHOULD trade on dips in FX or crypto.`,
+          momentum: `You are a momentum trader. For FX: follow forex trends — buy strengthening currencies (EURm, BRLm, KESm). For crypto: BUY tokens up >2% with bullish sentiment. Use forex news for FX signals. You SHOULD trade on momentum.`,
+          stablecoin_farmer: `You are an FX-focused trader. Diversify across Mento stablecoins (USDm, EURm, BRLm, CHFm, JPYm). Exploit spread differences. Only enter crypto on >10% dips. You SHOULD trade to diversify across FX.`,
           celo_maxi: `You are a Celo maximalist. Accumulate CELO on dips. DCA aggressively. Only SELL at >15% pumps to lock profits. You SHOULD trade to accumulate CELO.`,
         };
         personalityPrompt = presets[agent.personality] ?? DEFAULT_PROMPT;
@@ -531,6 +601,8 @@ export const executeTradeNow = action({
         sentiment: sentiment ?? [],
         fearGreed,
         tokenMeta: tokenMeta ?? [],
+        fxRates: fxRates ?? [],
+        forexNews: forexNews ?? [],
       });
 
       if (decision.action === "swap" && decision.fromToken && decision.toToken) {
@@ -556,7 +628,7 @@ export const executeTradeNow = action({
         const toAddr = TOKEN_ADDRESSES[decision.toToken];
         if (!fromAddr || !toAddr) return { success: true, decision: "hold (unknown token address)" };
 
-        const result = await executeSwap(client, account, fromAddr, toAddr, amountInWei, addr);
+        const result = await executeSwap(client, account, fromAddr, toAddr, amountInWei, addr, decision.fromToken, decision.toToken);
 
         await ctx.runMutation(internal.agentTradingMutations.recordTrade, {
           agentId: agent._id, fromToken: decision.fromToken, toToken: decision.toToken,
@@ -637,6 +709,8 @@ export const executeTrades = internalAction({
         const sentiment = await ctx.runQuery(internal.latestIntel.getLatestSentimentInternal, {});
         const fearGreed = await ctx.runQuery(internal.latestIntel.getFearGreedIndexInternal, {});
         const tokenMeta = await ctx.runQuery(internal.latestIntel.getTokenMetadataAllInternal, {});
+        const fxRates = await ctx.runQuery(internal.fxRates.getLatestInternal, {});
+        const forexNews = await ctx.runQuery(internal.latestIntel.getLatestForexNewsInternal, {});
 
         // 5. Build personality prompt
         const DEFAULT_PROMPT = `You are an AI trading agent. Buy dips, follow momentum, and take profits. You SHOULD trade when opportunities arise.`;
@@ -646,9 +720,9 @@ export const executeTrades = internalAction({
         } else if (agent.personality) {
           // Import personality prompts inline to avoid circular deps
           const presets: Record<string, string> = {
-            dip_buyer: `You are a mean-reversion trader. BUY when a token drops >3% in 24h. SELL on recovery (+2%). When Fear & Greed < 35, be MORE aggressive. You SHOULD trade on dips.`,
-            momentum: `You are a momentum trader. BUY tokens up >2% with bullish sentiment. SELL when sentiment fades. Use 7d/30d trends to confirm. You SHOULD trade on momentum.`,
-            stablecoin_farmer: `You are a capital-preservation trader. Stay in stablecoins. Only BUY volatile assets on >10% dips. Exit at +3-5% profit. You SHOULD trade on major dips.`,
+            dip_buyer: `You are a mean-reversion trader. For FX: BUY Mento stablecoins (EURm, BRLm, KESm) when depegged >0.5%. For crypto: BUY on >3% dips. SELL on recovery (+2%). You SHOULD trade on dips in FX or crypto.`,
+            momentum: `You are a momentum trader. For FX: follow forex trends — buy strengthening currencies (EURm, BRLm, KESm). For crypto: BUY tokens up >2% with bullish sentiment. Use forex news for FX signals. You SHOULD trade on momentum.`,
+            stablecoin_farmer: `You are an FX-focused trader. Diversify across Mento stablecoins (USDm, EURm, BRLm, CHFm, JPYm). Exploit spread differences. Only enter crypto on >10% dips. You SHOULD trade to diversify across FX.`,
             celo_maxi: `You are a Celo maximalist. Accumulate CELO on dips. DCA aggressively. Only SELL at >15% pumps to lock profits. You SHOULD trade to accumulate CELO.`,
           };
           personalityPrompt = presets[agent.personality] ?? DEFAULT_PROMPT;
@@ -673,6 +747,8 @@ export const executeTrades = internalAction({
           sentiment: sentiment ?? [],
           fearGreed,
           tokenMeta: tokenMeta ?? [],
+          fxRates: fxRates ?? [],
+          forexNews: forexNews ?? [],
         });
         console.log(`Agent ${agent.name} decision:`, JSON.stringify(decision));
 
@@ -705,7 +781,7 @@ export const executeTrades = internalAction({
           const toAddr = TOKEN_ADDRESSES[decision.toToken];
           if (!fromAddr || !toAddr) continue;
 
-          const result = await executeSwap(client, account, fromAddr, toAddr, amountInWei, agent.userAddress!);
+          const result = await executeSwap(client, account, fromAddr, toAddr, amountInWei, agent.userAddress!, decision.fromToken, decision.toToken);
 
           const platformFee = swapAmount * fromPrice * 0.001; // 0.1% platform fee
 

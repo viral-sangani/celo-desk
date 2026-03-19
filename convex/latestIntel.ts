@@ -116,6 +116,17 @@ export const getTokenMetadataAllInternal = internalQuery({
   },
 });
 
+export const getLatestForexNewsInternal = internalQuery({
+  args: {},
+  handler: async (ctx) => {
+    return await ctx.db
+      .query("marketIntel")
+      .withIndex("by_type", (q) => q.eq("type", "news"))
+      .order("desc")
+      .take(5);
+  },
+});
+
 export const getKolTweets = query({
   args: { limit: v.optional(v.float64()) },
   handler: async (ctx, args) => {
