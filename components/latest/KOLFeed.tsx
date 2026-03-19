@@ -10,7 +10,7 @@ function getSentimentColor(sentiment?: string): string {
 }
 
 export default function KOLFeed() {
-  const tweets = useQuery(api.latestIntel.getKolTweets, { limit: 10 });
+  const tweets = useQuery(api.latestIntel.getKolTweets, { limit: 15 });
 
   return (
     <div className="border border-terminal-border bg-[#0a0a0a]">

@@ -3,16 +3,24 @@
 import { internalAction } from "./_generated/server";
 import { internal } from "./_generated/api";
 
-// Real Celo ecosystem and crypto KOLs
+// Crypto KOLs and Celo ecosystem accounts
+// These handles are passed to Grok to generate tweet-style summaries
 const KOLS = [
   "VitalikButerin",
-  "caboronern",
-  "RegenRene",
-  "0xMaki",
-  "staborobot",
-  "maaboronern",
   "aantonop",
-  "ethereumJoseph",
+  "punk6529",
+  "CryptoHayes",
+  "DefiIgnas",
+  "0xMaki",
+  "jessepollak",
+  "celoorg",
+  "MentoLabs",
+  "RegenRene",
+  "rleshner",
+  "sassal0x",
+  "WuBlockchain",
+  "CryptoCobain",
+  "BarrySilbert",
 ];
 
 export const fetchKolTweets = internalAction({
@@ -42,7 +50,7 @@ IMPORTANT: Only return REAL tweets you can verify. Do NOT fabricate tweets. Do N
 For the "url" field, use the format "https://x.com/{handle}" (just link to their profile, NOT a fake status URL).
 Respond ONLY with a valid JSON array, no markdown:
 [{"handle": "@VitalikButerin", "name": "Vitalik Buterin", "text": "actual tweet text...", "url": "https://x.com/VitalikButerin", "sentiment": "bullish"|"bearish"|"neutral", "tokens": "BTC,ETH"}]
-If you cannot find real recent tweets from a KOL, omit them entirely. Return up to 8 results.`,
+If you cannot find real recent tweets from a KOL, omit them entirely. Return up to 15 results.`,
             },
           ],
         }),
@@ -63,7 +71,7 @@ If you cannot find real recent tweets from a KOL, omit them entirely. Return up 
       if (!Array.isArray(parsed) || parsed.length === 0) return;
 
       const now = Date.now();
-      const items = parsed.slice(0, 8).map((t: any) => {
+      const items = parsed.slice(0, 15).map((t: any) => {
         // Only use profile URL, never trust status URLs from LLM
         const handle = (t.handle ?? "").replace(/^@/, "");
         const profileUrl = handle ? `https://x.com/${handle}` : undefined;
