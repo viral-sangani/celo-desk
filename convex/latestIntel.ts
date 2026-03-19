@@ -1,4 +1,4 @@
-import { query } from "./_generated/server";
+import { query, internalQuery } from "./_generated/server";
 import { v } from "convex/values";
 
 export const getLatestSentiment = query({
@@ -68,6 +68,51 @@ export const getLatestNews = query({
       .withIndex("by_type", (q) => q.eq("type", "news"))
       .order("desc")
       .take(limit);
+  },
+});
+
+// Internal versions for use from internalActions (agentTrading)
+export const getLatestSentimentInternal = internalQuery({
+  args: {},
+  handler: async (ctx) => {
+    const tokens = ["CELO", "BTC", "ETH"];
+    const results = [];
+    for (const token of tokens) {
+      const latest = await ctx.db
+        .query("socialSentiment")
+        .withIndex("by_token", (q) => q.eq("token", token))
+        .order("desc")
+        .first();
+      if (latest) results.push(latest);
+    }
+    return results;
+  },
+});
+
+export const getFearGreedIndexInternal = internalQuery({
+  args: {},
+  handler: async (ctx) => {
+    return await ctx.db
+      .query("fearGreedIndex")
+      .withIndex("by_timestamp")
+      .order("desc")
+      .first();
+  },
+});
+
+export const getTokenMetadataAllInternal = internalQuery({
+  args: {},
+  handler: async (ctx) => {
+    const tokens = ["CELO", "BTC", "ETH", "XAUt", "USDC", "USDT"];
+    const results = [];
+    for (const token of tokens) {
+      const meta = await ctx.db
+        .query("tokenMetadata")
+        .withIndex("by_token", (q) => q.eq("token", token))
+        .first();
+      if (meta) results.push(meta);
+    }
+    return results;
   },
 });
 

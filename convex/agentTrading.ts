@@ -190,35 +190,66 @@ async function fetchNewsFromParallel(): Promise<string> {
   }
 }
 
-async function getGeminiDecision(
-  holdings: any[],
-  prices: any[],
-  news: string
-): Promise<any> {
+interface TradingContext {
+  holdings: any[];
+  prices: any[];
+  news: string;
+  personalityPrompt: string;
+  riskLevel: string;
+  sentiment: any[];
+  fearGreed: any;
+  tokenMeta: any[];
+}
+
+async function getGeminiDecision(ctx: TradingContext): Promise<any> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) return { action: "hold", reason: "No Gemini API key" };
 
-  const prompt = `You are an AI trading agent managing a crypto portfolio on Celo blockchain. All trades are against USDT.
+  const riskMaxPercent = ctx.riskLevel === "aggressive" ? 50 : ctx.riskLevel === "moderate" ? 25 : 10;
+
+  // Build multi-timeframe analysis
+  const multiTimeframe = ctx.tokenMeta
+    .map((m: any) => `${m.token}: 24h: ${m.change24h?.toFixed(2) ?? "?"}%, 7d: ${m.change7d?.toFixed(2) ?? "?"}%, 30d: ${m.change30d?.toFixed(2) ?? "?"}%`)
+    .join("\n");
+
+  // Build sentiment summary
+  const sentimentSummary = ctx.sentiment
+    .map((s: any) => `${s.token}: ${s.sentiment} (score: ${s.score})`)
+    .join("\n");
+
+  const fearGreedText = ctx.fearGreed
+    ? `Fear & Greed Index: ${ctx.fearGreed.value} (${ctx.fearGreed.classification})`
+    : "Fear & Greed: unavailable";
+
+  const prompt = `${ctx.personalityPrompt}
+
+You are managing a crypto portfolio on Celo blockchain. All trades are swaps against USDT.
+
+Risk Level: ${ctx.riskLevel} (max ${riskMaxPercent}% of any holding per trade, minimum trade $1)
 
 Current Holdings:
-${JSON.stringify(holdings, null, 2)}
+${JSON.stringify(ctx.holdings, null, 2)}
 
 Current Token Prices (USD):
-${JSON.stringify(prices, null, 2)}
+${JSON.stringify(ctx.prices.map((p: any) => ({ token: p.token, price: p.priceUsd, change24h: p.change24h })), null, 2)}
 
-Recent Market News:
-${news}
+Multi-Timeframe Analysis:
+${multiTimeframe}
 
-Based on the market conditions, decide if you should rebalance. Consider:
-- Price trends (24h changes)
-- News sentiment
-- Portfolio concentration risk
-- Keep trades conservative (max 10% of any holding per trade)
+Market Sentiment:
+${fearGreedText}
+${sentimentSummary}
+
+Recent News:
+${ctx.news}
+
+Based on your personality and the data above, make a trading decision.
+You SHOULD trade when your strategy signals an opportunity — do not default to holding.
 
 Respond with ONLY a valid JSON object, no markdown:
-{"action":"swap","fromToken":"CELO","toToken":"USDT","amountPercent":10,"reason":"brief explanation"}
+{"action":"swap","fromToken":"USDT","toToken":"CELO","amountPercent":${riskMaxPercent},"reason":"brief explanation"}
 
-If no trade needed: {"action":"hold","reason":"brief explanation"}`;
+If genuinely no opportunity matches your strategy: {"action":"hold","reason":"brief explanation"}`;
 
   try {
     const res = await fetch(
@@ -232,7 +263,6 @@ If no trade needed: {"action":"hold","reason":"brief explanation"}`;
     if (!res.ok) return { action: "hold", reason: `Gemini error: ${res.status}` };
     const data = await res.json();
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
-    // Extract JSON from response (may have markdown)
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (jsonMatch) return JSON.parse(jsonMatch[0]);
     return { action: "hold", reason: "Could not parse Gemini response" };
@@ -375,7 +405,28 @@ export const executeTrades = internalAction({
         // 3. Get news from Parallel AI
         const news = await fetchNewsFromParallel();
 
-        // 4. Ask Gemini for trading decision
+        // 4. Get enriched market data
+        const sentiment = await ctx.runQuery(internal.latestIntel.getLatestSentimentInternal, {});
+        const fearGreed = await ctx.runQuery(internal.latestIntel.getFearGreedIndexInternal, {});
+        const tokenMeta = await ctx.runQuery(internal.latestIntel.getTokenMetadataAllInternal, {});
+
+        // 5. Build personality prompt
+        const DEFAULT_PROMPT = `You are an AI trading agent. Buy dips, follow momentum, and take profits. You SHOULD trade when opportunities arise.`;
+        let personalityPrompt = DEFAULT_PROMPT;
+        if (agent.personality === "custom" && agent.personalityPrompt) {
+          personalityPrompt = agent.personalityPrompt;
+        } else if (agent.personality) {
+          // Import personality prompts inline to avoid circular deps
+          const presets: Record<string, string> = {
+            dip_buyer: `You are a mean-reversion trader. BUY when a token drops >3% in 24h. SELL on recovery (+2%). When Fear & Greed < 35, be MORE aggressive. You SHOULD trade on dips.`,
+            momentum: `You are a momentum trader. BUY tokens up >2% with bullish sentiment. SELL when sentiment fades. Use 7d/30d trends to confirm. You SHOULD trade on momentum.`,
+            stablecoin_farmer: `You are a capital-preservation trader. Stay in stablecoins. Only BUY volatile assets on >10% dips. Exit at +3-5% profit. You SHOULD trade on major dips.`,
+            celo_maxi: `You are a Celo maximalist. Accumulate CELO on dips. DCA aggressively. Only SELL at >15% pumps to lock profits. You SHOULD trade to accumulate CELO.`,
+          };
+          personalityPrompt = presets[agent.personality] ?? DEFAULT_PROMPT;
+        }
+
+        // 6. Ask Gemini for trading decision
         const holdingsWithValues = balances.map((b) => {
           const price = prices.find((p: any) => p.token === b.token);
           return {
@@ -385,7 +436,16 @@ export const executeTrades = internalAction({
           };
         });
 
-        const decision = await getGeminiDecision(holdingsWithValues, prices, news);
+        const decision = await getGeminiDecision({
+          holdings: holdingsWithValues,
+          prices,
+          news,
+          personalityPrompt,
+          riskLevel: agent.riskLevel ?? "moderate",
+          sentiment: sentiment ?? [],
+          fearGreed,
+          tokenMeta: tokenMeta ?? [],
+        });
         console.log(`Agent ${agent.name} decision:`, JSON.stringify(decision));
 
         // 5. Execute swap if needed, or record hold

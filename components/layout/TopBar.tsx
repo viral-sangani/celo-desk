@@ -32,7 +32,7 @@ function getTradingSession(): string {
 }
 
 interface TopBarProps {
-  activeTab?: "terminal" | "history" | "latest";
+  activeTab?: "terminal" | "history" | "latest" | "settings";
 }
 
 export default function TopBar({ activeTab = "terminal" }: TopBarProps) {
@@ -57,7 +57,7 @@ export default function TopBar({ activeTab = "terminal" }: TopBarProps) {
 
           {/* Desktop nav */}
           <nav className="hidden md:flex items-center gap-1">
-            {(["terminal", "history", "latest"] as const).map((tab) => (
+            {(["terminal", "history", "latest", "settings"] as const).map((tab) => (
               <Link
                 key={tab}
                 href={`/${tab}`}
@@ -128,7 +128,7 @@ export default function TopBar({ activeTab = "terminal" }: TopBarProps) {
       {/* Mobile nav dropdown */}
       {menuOpen && (
         <nav className="md:hidden border-t border-terminal-border bg-[#0a0a0a] px-3 py-2 flex flex-col gap-1">
-          {(["terminal", "history", "latest"] as const).map((tab) => (
+          {(["terminal", "history", "latest", "settings"] as const).map((tab) => (
             <Link
               key={tab}
               href={`/${tab}`}

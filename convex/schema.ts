@@ -18,7 +18,10 @@ export default defineSchema({
     tradeIntervalMs: v.float64(),
     lastTradeAt: v.optional(v.float64()),
     nextTradeAt: v.optional(v.float64()),
-    userAddress: v.optional(v.string()),  // User's connected wallet address
+    userAddress: v.optional(v.string()),
+    personality: v.optional(v.string()),        // "dip_buyer" | "momentum" | "stablecoin_farmer" | "celo_maxi" | "custom"
+    personalityPrompt: v.optional(v.string()),  // custom prompt text
+    riskLevel: v.optional(v.string()),          // "conservative" | "moderate" | "aggressive"
     createdAt: v.float64(),
   })
     .index("by_status", ["status"])

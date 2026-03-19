@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { internalMutation } from "./_generated/server";
+import { internalMutation, mutation } from "./_generated/server";
 
 export const recordTrade = internalMutation({
   args: {
@@ -105,5 +105,31 @@ export const recordWithdrawal = internalMutation({
       agentId: args.agentId,
       timestamp: args.timestamp,
     });
+  },
+});
+
+export const updatePersonality = mutation({
+  args: {
+    agentId: v.id("agents"),
+    personality: v.string(),
+    personalityPrompt: v.optional(v.string()),
+    riskLevel: v.string(),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.agentId, {
+      personality: args.personality,
+      personalityPrompt: args.personalityPrompt ?? "",
+      riskLevel: args.riskLevel,
+    });
+  },
+});
+
+export const updateAgentStatus = mutation({
+  args: {
+    agentId: v.id("agents"),
+    status: v.union(v.literal("active"), v.literal("paused"), v.literal("stopped")),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.agentId, { status: args.status });
   },
 });
