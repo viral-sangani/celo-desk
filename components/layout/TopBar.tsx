@@ -52,19 +52,15 @@ export default function TopBar({ activeTab = "terminal" }: TopBarProps) {
       {/* Main bar */}
       <div className="h-10 flex items-center justify-between px-3 lg:px-4">
         <div className="flex items-center gap-2 lg:gap-6">
-          <Link href="/" className="flex items-center gap-2">
-            <Image src="/celodesk-logo.png" alt="Celo Desk" width={28} height={28} className="w-6 h-6 lg:w-7 lg:h-7" />
-            <div className="flex items-center gap-2">
-              <div className="leading-none">
-                <span className="text-[#FFEB3B] font-bold tracking-tight text-sm lg:text-base block leading-none">CELO</span>
-                <span className="text-white font-bold tracking-[0.2em] text-[10px] lg:text-xs block leading-none">DESK</span>
-              </div>
-              <div className="hidden lg:flex items-center gap-2 border-l border-terminal-border pl-2">
-                <span className="text-[10px] text-gray-500 leading-tight uppercase tracking-wider">
-                  AI Agent<br />Trading<br />Terminal
-                </span>
-              </div>
-            </div>
+          <Link href="/" className="flex items-center gap-1.5">
+            <Image src="/celodesk-logo.png" alt="Celo Desk" width={24} height={24} className="w-5 h-5 lg:w-6 lg:h-6" />
+            <span className="font-bold tracking-tight text-sm lg:text-base">
+              <span className="text-[#FFEB3B]">CELO</span>
+              <span className="text-white ml-1">DESK</span>
+            </span>
+            <span className="hidden lg:inline text-[9px] text-gray-500 uppercase tracking-wider border-l border-terminal-border pl-2 ml-1">
+              AI Agent Trading Terminal
+            </span>
           </Link>
 
           {/* Desktop nav */}
