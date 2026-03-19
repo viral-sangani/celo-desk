@@ -90,6 +90,7 @@ export default function Portfolio({ connected, walletAddress }: PortfolioProps) 
 
   const createAgentAction = useAction(api.agentWalletAction.createAgent);
   const refreshPortfolio = useAction(api.agentTrading.refreshPortfolio);
+  const executeTradeNow = useAction(api.agentTrading.executeTradeNow);
 
   const holdings = useQuery(
     api.agents.getHoldings,
@@ -102,6 +103,8 @@ export default function Portfolio({ connected, walletAddress }: PortfolioProps) 
   const nextTrade = agentData.nextTradeAt ?? Date.now() + 300000;
 
   const [refreshing, setRefreshing] = useState(false);
+  const [trading, setTrading] = useState(false);
+  const [tradeResult, setTradeResult] = useState<string | null>(null);
 
   const handleRefreshPortfolio = async () => {
     if (walletAddress) {
@@ -113,6 +116,27 @@ export default function Portfolio({ connected, walletAddress }: PortfolioProps) 
       } finally {
         setRefreshing(false);
       }
+    }
+  };
+
+  const handleTradeNow = async () => {
+    if (!walletAddress) return;
+    setTrading(true);
+    setTradeResult(null);
+    try {
+      const result = await executeTradeNow({ userAddress: walletAddress });
+      if (result.success) {
+        setTradeResult(result.decision ?? "Trade executed");
+      } else {
+        setTradeResult(`Error: ${result.error}`);
+      }
+      setTimeout(() => setTradeResult(null), 5000);
+    } catch (err) {
+      console.error("Trade execution failed:", err);
+      setTradeResult("Execution failed");
+      setTimeout(() => setTradeResult(null), 5000);
+    } finally {
+      setTrading(false);
     }
   };
 
@@ -233,7 +257,23 @@ export default function Portfolio({ connected, walletAddress }: PortfolioProps) 
             >
               Withdraw
             </button>
+            <button
+              onClick={handleTradeNow}
+              disabled={trading}
+              className="px-3 py-1 border border-purple-500 text-purple-400 text-[10px] font-bold uppercase tracking-wider hover:bg-purple-500/10 disabled:opacity-50"
+            >
+              {trading ? "EXECUTING..." : "Trade Now"}
+            </button>
           </div>
+          {tradeResult && (
+            <div className={`text-[10px] px-3 py-1.5 border ${
+              tradeResult.startsWith("Error") || tradeResult.startsWith("Execution")
+                ? "text-terminal-red border-terminal-red/30 bg-terminal-red/5"
+                : "text-terminal-green border-terminal-green/30 bg-terminal-green/5"
+            }`}>
+              {tradeResult}
+            </div>
+          )}
         </div>
 
         {/* Existing portfolio content */}

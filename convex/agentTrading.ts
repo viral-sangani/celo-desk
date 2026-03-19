@@ -377,6 +377,117 @@ export const refreshPortfolio = action({
 });
 
 // ---------------------------------------------------------------------------
+// Public action – manually trigger a trade for a user's agent
+// ---------------------------------------------------------------------------
+
+export const executeTradeNow = action({
+  args: { userAddress: v.string() },
+  handler: async (ctx, args): Promise<{ success: boolean; decision?: string; error?: string }> => {
+    const addr = args.userAddress.toLowerCase();
+    const agent = await ctx.runQuery(
+      internal.agentWalletInternal.getAgentForUser,
+      { userAddress: addr }
+    );
+    if (!agent) return { success: false, error: "No agent found" };
+    if (agent.status !== "active") return { success: false, error: "Agent is not active" };
+
+    try {
+      const { client, account } = await getAgentAccount(addr);
+      const balances = await getOnChainBalances(client, agent.walletAddress);
+      if (balances.length === 0) return { success: false, error: "No balances found" };
+
+      const prices = await ctx.runQuery(internal.agentTradingInternal.getAllPrices, {});
+      const news = await fetchNewsFromParallel();
+      const sentiment = await ctx.runQuery(internal.latestIntel.getLatestSentimentInternal, {});
+      const fearGreed = await ctx.runQuery(internal.latestIntel.getFearGreedIndexInternal, {});
+      const tokenMeta = await ctx.runQuery(internal.latestIntel.getTokenMetadataAllInternal, {});
+
+      const DEFAULT_PROMPT = `You are an AI trading agent. Buy dips, follow momentum, and take profits. You SHOULD trade when opportunities arise.`;
+      let personalityPrompt = DEFAULT_PROMPT;
+      if (agent.personality === "custom" && agent.personalityPrompt) {
+        personalityPrompt = agent.personalityPrompt;
+      } else if (agent.personality) {
+        const presets: Record<string, string> = {
+          dip_buyer: `You are a mean-reversion trader. BUY when a token drops >3% in 24h. SELL on recovery (+2%). When Fear & Greed < 35, be MORE aggressive. You SHOULD trade on dips.`,
+          momentum: `You are a momentum trader. BUY tokens up >2% with bullish sentiment. SELL when sentiment fades. Use 7d/30d trends to confirm. You SHOULD trade on momentum.`,
+          stablecoin_farmer: `You are a capital-preservation trader. Stay in stablecoins. Only BUY volatile assets on >10% dips. Exit at +3-5% profit. You SHOULD trade on major dips.`,
+          celo_maxi: `You are a Celo maximalist. Accumulate CELO on dips. DCA aggressively. Only SELL at >15% pumps to lock profits. You SHOULD trade to accumulate CELO.`,
+        };
+        personalityPrompt = presets[agent.personality] ?? DEFAULT_PROMPT;
+      }
+
+      const holdingsWithValues = balances.map((b) => {
+        const price = prices.find((p: any) => p.token === b.token);
+        return { ...b, priceUsd: price?.priceUsd ?? 0, valueUsd: b.amount * (price?.priceUsd ?? 0) };
+      });
+
+      const decision = await getGeminiDecision({
+        holdings: holdingsWithValues,
+        prices,
+        news,
+        personalityPrompt,
+        riskLevel: agent.riskLevel ?? "moderate",
+        sentiment: sentiment ?? [],
+        fearGreed,
+        tokenMeta: tokenMeta ?? [],
+      });
+
+      if (decision.action === "swap" && decision.fromToken && decision.toToken) {
+        const fromBalance = balances.find((b) => b.token === decision.fromToken);
+        if (!fromBalance) return { success: true, decision: `hold (no ${decision.fromToken} balance)` };
+
+        const swapAmount = fromBalance.amount * (decision.amountPercent / 100);
+        const amountInWei = BigInt(Math.floor(swapAmount * 10 ** fromBalance.decimals));
+        if (amountInWei <= BigInt(0)) return { success: true, decision: "hold (amount too small)" };
+
+        const fromAddr = TOKEN_ADDRESSES[decision.fromToken];
+        const toAddr = TOKEN_ADDRESSES[decision.toToken];
+        if (!fromAddr || !toAddr) return { success: true, decision: "hold (unknown token address)" };
+
+        const result = await executeSwap(client, account, fromAddr, toAddr, amountInWei);
+        const fromPrice = prices.find((p: any) => p.token === decision.fromToken)?.priceUsd ?? 0;
+
+        await ctx.runMutation(internal.agentTradingMutations.recordTrade, {
+          agentId: agent._id, fromToken: decision.fromToken, toToken: decision.toToken,
+          fromAmount: swapAmount, toAmount: 0, priceUsd: fromPrice,
+          feeUsd: swapAmount * fromPrice * 0.001, txHash: result.transactionHash,
+          timestamp: Date.now(), reason: decision.reason ?? "", reasonFull: JSON.stringify(decision), decision: "swap",
+        });
+      } else {
+        await ctx.runMutation(internal.agentTradingMutations.recordTrade, {
+          agentId: agent._id, fromToken: "", toToken: "", fromAmount: 0, toAmount: 0,
+          priceUsd: 0, feeUsd: 0, txHash: "", timestamp: Date.now(),
+          reason: decision.reason ?? "", reasonFull: JSON.stringify(decision), decision: "hold",
+        });
+      }
+
+      // Update portfolio
+      const newBalances = await getOnChainBalances(client, agent.walletAddress);
+      let totalValue = 0;
+      const holdings = newBalances.map((b) => {
+        const price = prices.find((p: any) => p.token === b.token);
+        const valueUsd = b.amount * (price?.priceUsd ?? 0);
+        totalValue += valueUsd;
+        return { token: b.token, amount: b.amount, valueUsd, allocationPercent: 0 };
+      });
+      for (const h of holdings) h.allocationPercent = totalValue > 0 ? (h.valueUsd / totalValue) * 100 : 0;
+
+      await ctx.runMutation(internal.agentTradingMutations.updateHoldings, { agentId: agent._id, holdings });
+      await ctx.runMutation(internal.agentTradingMutations.updateAgentMetrics, {
+        agentId: agent._id, portfolioValue: totalValue, pnl: agent.pnl, pnlPercent: agent.pnlPercent,
+        totalTrades: agent.totalTrades + (decision.action === "swap" ? 1 : 0),
+        lastTradeAt: Date.now(), nextTradeAt: Date.now() + 300000,
+      });
+
+      return { success: true, decision: `${decision.action}: ${decision.reason}` };
+    } catch (err: any) {
+      console.error(`executeTradeNow error for ${addr}:`, err);
+      return { success: false, error: err.message ?? "Trade execution failed" };
+    }
+  },
+});
+
+// ---------------------------------------------------------------------------
 // Internal action – called by cron every 5 minutes
 // ---------------------------------------------------------------------------
 
