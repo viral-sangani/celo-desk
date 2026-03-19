@@ -334,7 +334,6 @@ export default function Portfolio({ connected, walletAddress }: PortfolioProps) 
                     <th className="pb-2 font-normal">Token</th>
                     <th className="pb-2 font-normal text-right">Amount</th>
                     <th className="pb-2 font-normal text-right">Value</th>
-                    <th className="pb-2 font-normal text-right">P/L</th>
                     <th className="pb-2 font-normal text-right">%</th>
                   </tr>
                 </thead>
@@ -346,9 +345,6 @@ export default function Portfolio({ connected, walletAddress }: PortfolioProps) 
                         {h.amount.toLocaleString(undefined, { maximumFractionDigits: 3 })}
                       </td>
                       <td className="text-right">{formatUsd(h.valueUsd)}</td>
-                      <td className={`text-right ${(h.pnl ?? 0) >= 0 ? "text-terminal-green" : "text-terminal-red"}`}>
-                        {(h.pnl ?? 0) >= 0 ? "+" : ""}{formatUsd(h.pnl ?? 0)}
-                      </td>
                       <td className="text-right">{h.allocationPercent.toFixed(1)}%</td>
                     </tr>
                   ))}
