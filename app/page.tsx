@@ -84,7 +84,7 @@ export default function LandingPage() {
         </div>
         <Link
           href="/terminal"
-          className="border border-[#00FF41] text-[#00FF41] px-3 sm:px-4 py-1.5 sm:py-2 text-[10px] sm:text-xs uppercase tracking-[0.15em] hover:bg-[#00FF41] hover:text-black transition-all font-bold"
+          className="border border-[#00FF41] text-[#00FF41] px-3 sm:px-4 py-1.5 sm:py-2 text-[10px] sm:text-xs uppercase tracking-[0.15em] hover:bg-[#00FF41] hover:text-black transition-colors active:scale-[0.97] font-bold"
         >
           Launch App
         </Link>
@@ -117,13 +117,13 @@ export default function LandingPage() {
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
             <Link
               href="/terminal"
-              className="bg-[#00FF41] text-black px-6 sm:px-8 py-3 text-xs sm:text-sm uppercase tracking-[0.15em] font-bold hover:bg-[#00FF41]/90 transition-colors"
+              className="bg-[#00FF41] text-black px-6 sm:px-8 py-3 text-xs sm:text-sm uppercase tracking-[0.15em] font-bold hover:bg-[#00FF41]/90 transition-colors active:scale-[0.97]"
             >
               Enter Terminal
             </Link>
             <Link
               href="/latest"
-              className="border border-[#FFB800] text-[#FFB800] px-6 sm:px-8 py-3 text-xs sm:text-sm uppercase tracking-[0.15em] font-bold hover:bg-[#FFB800]/10 transition-colors"
+              className="border border-[#FFB800] text-[#FFB800] px-6 sm:px-8 py-3 text-xs sm:text-sm uppercase tracking-[0.15em] font-bold hover:bg-[#FFB800]/10 transition-colors active:scale-[0.97]"
             >
               View Market Data
             </Link>
@@ -348,7 +348,7 @@ export default function LandingPage() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {Object.values(PERSONALITIES).map((p) => (
-              <div key={p.id} className="border border-[#333] bg-black p-5 hover:border-gray-500 transition-colors group">
+              <div key={p.id} className="border border-[#333] bg-black p-5 hover:border-gray-500 transition-colors active:scale-[0.97] group">
                 <div
                   className="w-10 h-10 border flex items-center justify-center text-xl mb-4 transition-colors"
                   style={{ borderColor: p.color, color: p.color }}
@@ -407,7 +407,7 @@ export default function LandingPage() {
           </p>
           <Link
             href="/terminal"
-            className="inline-block bg-[#00FF41] text-black px-8 sm:px-10 py-3 sm:py-4 text-xs sm:text-sm uppercase tracking-[0.15em] font-bold hover:bg-[#00FF41]/90 transition-colors"
+            className="inline-block bg-[#00FF41] text-black px-8 sm:px-10 py-3 sm:py-4 text-xs sm:text-sm uppercase tracking-[0.15em] font-bold hover:bg-[#00FF41]/90 transition-colors active:scale-[0.97]"
           >
             Launch Terminal
           </Link>

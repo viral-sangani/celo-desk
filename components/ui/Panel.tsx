@@ -38,8 +38,8 @@ export default function Panel({
         >
           <span className={`${titleColor} font-bold`}>
             {collapsible && (
-              <span className="text-gray-500 mr-2 text-[10px]">
-                {collapsed ? "▶" : "▼"}
+              <span className={`text-gray-500 mr-2 text-[10px] inline-block transition-transform duration-150 ${collapsed ? "" : "rotate-90"}`}>
+                ▶
               </span>
             )}
             {title}

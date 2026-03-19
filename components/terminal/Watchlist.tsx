@@ -66,7 +66,7 @@ export default function Watchlist({ onTokenSelect }: WatchlistProps) {
                             e.stopPropagation();
                             removeToken(row.token);
                           }}
-                          className="text-terminal-amber text-sm leading-none hover:text-terminal-red transition-colors"
+                          className="text-terminal-amber text-sm leading-none hover:text-terminal-red transition-colors active:scale-[0.97]"
                           title={`Remove ${row.token} from watchlist`}
                         >
                           ★

@@ -14,9 +14,18 @@ body {
   }
 }
 
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-slide-down {
+  animation: slideDown 100ms ease-out;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-marquee,
-  .animate-pulse {
+  .animate-pulse,
+  .scanline {
     animation: none !important;
   }
 }

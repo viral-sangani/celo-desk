@@ -12,7 +12,7 @@ export default function PersonalityCard({ personality, selected, onClick }: Pers
   return (
     <button
       onClick={onClick}
-      className={`text-left p-4 border transition-all ${
+      className={`text-left p-4 border transition-colors active:scale-[0.97] ${
         selected
           ? "border-terminal-green bg-terminal-green/5"
           : "border-terminal-border hover:border-gray-500 bg-[#0a0a0a]"

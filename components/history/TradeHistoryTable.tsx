@@ -118,7 +118,7 @@ export default function TradeHistoryTable({ trades }: TradeHistoryTableProps) {
                   <td className="px-3 py-2 text-center">
                     <button
                       onClick={() => setSelectedTrade(trade)}
-                      className="text-gray-500 hover:text-terminal-green text-[10px] border border-terminal-border px-2 py-0.5 hover:border-terminal-green/30"
+                      className="text-gray-500 hover:text-terminal-green text-[10px] border border-terminal-border px-2 py-0.5 hover:border-terminal-green/30 transition-colors active:scale-[0.97]"
                     >
                       DETAIL
                     </button>

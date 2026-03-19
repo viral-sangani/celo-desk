@@ -60,6 +60,7 @@ export default function FearGreedGauge() {
           strokeLinecap="round"
           strokeDasharray={`${circumference}`}
           strokeDashoffset={`${offset}`}
+          style={{ transition: 'stroke-dashoffset 600ms cubic-bezier(0.23, 1, 0.32, 1)' }}
         />
       </svg>
       <div className="text-2xl font-bold" style={{ color }}>

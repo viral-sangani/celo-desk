@@ -65,7 +65,7 @@ export default function IntelFeed() {
           <button
             key={f.id}
             onClick={() => { setFilter(f.id); setPage(0); }}
-            className={`px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+            className={`px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider transition-colors active:scale-[0.97] ${
               filter === f.id
                 ? "bg-terminal-green/10 text-terminal-green border border-terminal-green/30"
                 : "text-gray-500 hover:text-gray-300"
@@ -142,7 +142,7 @@ export default function IntelFeed() {
           <button
             onClick={() => setPage((p) => Math.max(0, p - 1))}
             disabled={page === 0}
-            className="text-[10px] text-gray-500 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
+            className="text-[10px] text-gray-500 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors active:scale-[0.97]"
           >
             &larr; PREV
           </button>
@@ -152,7 +152,7 @@ export default function IntelFeed() {
           <button
             onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
             disabled={page >= totalPages - 1}
-            className="text-[10px] text-gray-500 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
+            className="text-[10px] text-gray-500 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors active:scale-[0.97]"
           >
             NEXT &rarr;
           </button>

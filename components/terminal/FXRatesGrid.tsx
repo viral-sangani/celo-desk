@@ -66,7 +66,7 @@ export default function FXRatesGrid({ onTokenSelect }: FXRatesGridProps) {
                             e.stopPropagation();
                             toggleToken(token);
                           }}
-                          className={`text-sm leading-none transition-colors ${
+                          className={`text-sm leading-none transition-colors active:scale-[0.97] ${
                             bookmarked
                               ? "text-terminal-amber"
                               : "text-gray-700 hover:text-terminal-amber"

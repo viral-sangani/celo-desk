@@ -110,7 +110,7 @@ export default function KOLFeed() {
           <button
             onClick={() => setPage((p) => Math.max(0, p - 1))}
             disabled={page === 0}
-            className="text-[10px] text-gray-500 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
+            className="text-[10px] text-gray-500 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors active:scale-[0.97]"
           >
             &larr; PREV
           </button>
@@ -120,7 +120,7 @@ export default function KOLFeed() {
           <button
             onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
             disabled={page >= totalPages - 1}
-            className="text-[10px] text-gray-500 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
+            className="text-[10px] text-gray-500 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors active:scale-[0.97]"
           >
             NEXT &rarr;
           </button>

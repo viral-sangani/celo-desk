@@ -39,7 +39,7 @@ function CopyableAddress({ label, address }: { label: string; address?: string }
       {label}:{" "}
       <button
         onClick={handleCopy}
-        className="text-gray-300 hover:text-terminal-green transition-colors cursor-pointer"
+        className="text-gray-300 hover:text-terminal-green transition-colors active:scale-[0.97] cursor-pointer"
         title={address ?? ""}
       >
         {truncateAddress(address)}
@@ -205,7 +205,7 @@ export default function Portfolio({ connected, walletAddress }: PortfolioProps) 
           <button
             onClick={handleCreateAgent}
             disabled={creating}
-            className="px-4 py-2 border border-terminal-green text-terminal-green text-[10px] font-bold uppercase tracking-wider hover:bg-terminal-green/10 transition-colors disabled:opacity-50"
+            className="px-4 py-2 border border-terminal-green text-terminal-green text-[10px] font-bold uppercase tracking-wider hover:bg-terminal-green/10 transition-colors active:scale-[0.97] disabled:opacity-50"
           >
             {creating ? "CREATING..." : "Create Agent"}
           </button>
@@ -239,7 +239,7 @@ export default function Portfolio({ connected, walletAddress }: PortfolioProps) 
             <button
               onClick={handleRefreshPortfolio}
               disabled={refreshing}
-              className="px-3 py-1 border border-terminal-border text-gray-400 text-[10px] font-bold uppercase tracking-wider hover:bg-[#1a1a1a] hover:text-white transition-colors disabled:opacity-50"
+              className="px-3 py-1 border border-terminal-border text-gray-400 text-[10px] font-bold uppercase tracking-wider hover:bg-[#1a1a1a] hover:text-white transition-colors active:scale-[0.97] disabled:opacity-50"
               title="Refresh on-chain balances"
             >
               <span className={refreshing ? "animate-spin inline-block" : ""}>↻</span>
@@ -247,20 +247,20 @@ export default function Portfolio({ connected, walletAddress }: PortfolioProps) 
             </button>
             <button
               onClick={() => setShowDeposit(true)}
-              className="px-3 py-1 border border-terminal-green text-terminal-green text-[10px] font-bold uppercase tracking-wider hover:bg-terminal-green/10"
+              className="px-3 py-1 border border-terminal-green text-terminal-green text-[10px] font-bold uppercase tracking-wider hover:bg-terminal-green/10 transition-colors active:scale-[0.97]"
             >
               Deposit
             </button>
             <button
               onClick={() => setShowWithdraw(true)}
-              className="px-3 py-1 border border-terminal-amber text-terminal-amber text-[10px] font-bold uppercase tracking-wider hover:bg-terminal-amber/10"
+              className="px-3 py-1 border border-terminal-amber text-terminal-amber text-[10px] font-bold uppercase tracking-wider hover:bg-terminal-amber/10 transition-colors active:scale-[0.97]"
             >
               Withdraw
             </button>
             <button
               onClick={handleTradeNow}
               disabled={trading}
-              className="px-3 py-1 border border-purple-500 text-purple-400 text-[10px] font-bold uppercase tracking-wider hover:bg-purple-500/10 disabled:opacity-50"
+              className="px-3 py-1 border border-purple-500 text-purple-400 text-[10px] font-bold uppercase tracking-wider hover:bg-purple-500/10 transition-colors active:scale-[0.97] disabled:opacity-50"
             >
               {trading ? "EXECUTING..." : "Trade Now"}
             </button>

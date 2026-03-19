@@ -24,7 +24,7 @@ export default function TabbedPanel({ tabs, defaultTab }: TabbedPanelProps) {
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`px-3 py-1 text-[10px] font-bold uppercase tracking-wider transition-colors ${
+            className={`px-3 py-1 text-[10px] font-bold uppercase tracking-wider transition-colors active:scale-[0.97] ${
               activeTab === tab.id
                 ? "text-terminal-amber border-b border-terminal-amber bg-[#0a0a0a]"
                 : "text-gray-500 hover:text-gray-300"
@@ -35,11 +35,11 @@ export default function TabbedPanel({ tabs, defaultTab }: TabbedPanelProps) {
         ))}
       </div>
       {/* Content */}
-      <div className="flex-grow overflow-hidden min-h-0">
+      <div className="flex-grow overflow-hidden min-h-0 relative">
         {tabs.map((tab) => (
           <div
             key={tab.id}
-            className={`h-full ${activeTab === tab.id ? "block" : "hidden"}`}
+            className={`h-full transition-opacity duration-100 ${activeTab === tab.id ? "opacity-100" : "opacity-0 pointer-events-none absolute inset-0"}`}
           >
             {tab.content}
           </div>

@@ -27,9 +27,24 @@ const config: Config = {
           "0%": { transform: "translateX(100%)" },
           "100%": { transform: "translateX(-100%)" },
         },
+        modalIn: {
+          "0%": { opacity: "0", transform: "scale(0.97)" },
+          "100%": { opacity: "1", transform: "scale(1)" },
+        },
+        modalOut: {
+          "0%": { opacity: "1", transform: "scale(1)" },
+          "100%": { opacity: "0", transform: "scale(0.97)" },
+        },
+        backdropIn: {
+          "0%": { opacity: "0" },
+          "100%": { opacity: "1" },
+        },
       },
       animation: {
         marquee: "marquee 30s linear infinite",
+        "modal-in": "modalIn 150ms cubic-bezier(0.23, 1, 0.32, 1)",
+        "modal-out": "modalOut 100ms cubic-bezier(0.23, 1, 0.32, 1)",
+        "backdrop-in": "backdropIn 150ms ease-out",
       },
     },
   },

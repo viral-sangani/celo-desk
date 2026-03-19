@@ -32,8 +32,8 @@ export default function Footer({ variant = "terminal" }: FooterProps) {
 
   return (
     <footer className="h-6 bg-[#1a1a1a] border-t border-terminal-border flex items-center px-3 lg:px-4 text-[10px] space-x-4 lg:space-x-6 text-gray-500 shrink-0">
-      <div className="flex-grow text-center text-terminal-amber overflow-hidden whitespace-nowrap">
-        <span className="inline-block animate-marquee">
+      <div className="group flex-grow text-center text-terminal-amber overflow-hidden whitespace-nowrap">
+        <span className="inline-block animate-marquee group-hover:[animation-play-state:paused]">
           {tickerText}
         </span>
       </div>

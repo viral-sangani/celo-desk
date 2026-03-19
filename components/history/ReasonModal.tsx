@@ -20,8 +20,8 @@ export default function ReasonModal({ trade, onClose }: ReasonModalProps) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80">
-      <div className="bg-[#0a0a0a] border border-terminal-border rounded w-full max-w-lg mx-3 sm:mx-4 max-h-[85vh] sm:max-h-[80vh] flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 animate-backdrop-in">
+      <div className="bg-[#0a0a0a] border border-terminal-border rounded w-full max-w-lg mx-3 sm:mx-4 max-h-[85vh] sm:max-h-[80vh] flex flex-col animate-modal-in">
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-terminal-border">
           <div className="flex items-center gap-2">
@@ -38,7 +38,7 @@ export default function ReasonModal({ trade, onClose }: ReasonModalProps) {
           </div>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-white text-lg leading-none"
+            className="text-gray-500 hover:text-white text-lg leading-none transition-colors active:scale-[0.97]"
           >
             &times;
           </button>
@@ -93,7 +93,7 @@ export default function ReasonModal({ trade, onClose }: ReasonModalProps) {
         <div className="px-4 py-2 border-t border-terminal-border">
           <button
             onClick={onClose}
-            className="w-full text-xs py-1.5 text-gray-400 border border-terminal-border hover:border-gray-500 hover:text-white"
+            className="w-full text-xs py-1.5 text-gray-400 border border-terminal-border hover:border-gray-500 hover:text-white transition-colors active:scale-[0.97]"
           >
             CLOSE
           </button>

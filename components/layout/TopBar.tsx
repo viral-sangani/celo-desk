@@ -61,7 +61,7 @@ export default function TopBar({ activeTab = "terminal" }: TopBarProps) {
               <Link
                 key={tab}
                 href={`/${tab}`}
-                className={`px-3 lg:px-4 py-1 text-xs font-bold uppercase tracking-wider transition-colors focus:outline-none focus:ring-1 focus:ring-terminal-green ${
+                className={`px-3 lg:px-4 py-1 text-xs font-bold uppercase tracking-wider transition-colors active:scale-[0.97] focus:outline-none focus:ring-1 focus:ring-terminal-green ${
                   activeTab === tab
                     ? "bg-terminal-green/10 text-terminal-green border border-terminal-green/30"
                     : "text-slate-500 hover:text-slate-300"
@@ -111,7 +111,7 @@ export default function TopBar({ activeTab = "terminal" }: TopBarProps) {
           {/* Mobile hamburger */}
           <button
             onClick={() => setMenuOpen(!menuOpen)}
-            className="md:hidden p-2 text-gray-400 hover:text-white focus:outline-none focus:ring-1 focus:ring-terminal-green"
+            className="md:hidden p-2 text-gray-400 hover:text-white transition-colors active:scale-[0.97] focus:outline-none focus:ring-1 focus:ring-terminal-green"
             aria-label="Toggle navigation menu"
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -127,13 +127,13 @@ export default function TopBar({ activeTab = "terminal" }: TopBarProps) {
 
       {/* Mobile nav dropdown */}
       {menuOpen && (
-        <nav className="md:hidden border-t border-terminal-border bg-[#0a0a0a] px-3 py-2 flex flex-col gap-1">
+        <nav className="md:hidden border-t border-terminal-border bg-[#0a0a0a] px-3 py-2 flex flex-col gap-1 animate-slide-down">
           {(["terminal", "history", "latest", "settings"] as const).map((tab) => (
             <Link
               key={tab}
               href={`/${tab}`}
               onClick={() => setMenuOpen(false)}
-              className={`px-3 py-2 text-xs font-bold uppercase tracking-wider transition-colors ${
+              className={`px-3 py-2 text-xs font-bold uppercase tracking-wider transition-colors active:scale-[0.97] ${
                 activeTab === tab
                   ? "bg-terminal-green/10 text-terminal-green border border-terminal-green/30"
                   : "text-slate-500 hover:text-slate-300"

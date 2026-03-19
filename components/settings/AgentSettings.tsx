@@ -92,7 +92,7 @@ export default function AgentSettings({ walletAddress }: AgentSettingsProps) {
             <button
               key={status}
               onClick={() => handleStatusChange(status)}
-              className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-wider border transition-colors ${
+              className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-wider border transition-colors active:scale-[0.97] ${
                 userAgent.status === status
                   ? status === "active"
                     ? "border-terminal-green text-terminal-green bg-terminal-green/10"
@@ -127,7 +127,7 @@ export default function AgentSettings({ walletAddress }: AgentSettingsProps) {
         {/* Custom option */}
         <button
           onClick={() => setSelectedPersonality("custom")}
-          className={`mt-3 w-full text-left p-4 border transition-all ${
+          className={`mt-3 w-full text-left p-4 border transition-colors active:scale-[0.97] ${
             selectedPersonality === "custom"
               ? "border-terminal-green bg-terminal-green/5"
               : "border-terminal-border hover:border-gray-500 bg-[#0a0a0a]"
@@ -152,7 +152,7 @@ export default function AgentSettings({ walletAddress }: AgentSettingsProps) {
               value={customPrompt}
               onChange={(e) => setCustomPrompt(e.target.value)}
               placeholder="Describe your trading strategy. Example: Buy CELO when it drops more than 5%. Sell when it's up 3%. Always keep 50% in stablecoins..."
-              className="w-full h-32 bg-black border border-terminal-border p-3 text-xs text-white font-mono resize-none focus:outline-none focus:border-terminal-green"
+              className="w-full h-32 bg-black border border-terminal-border p-3 text-xs text-white font-mono resize-none focus:outline-none focus:border-terminal-green transition-colors"
             />
             <div className="text-[10px] text-gray-600 mt-1">
               This prompt will be sent to the AI trading agent to guide its decisions.
@@ -172,7 +172,7 @@ export default function AgentSettings({ walletAddress }: AgentSettingsProps) {
               <button
                 key={id}
                 onClick={() => setRiskLevel(id)}
-                className={`flex-1 px-3 py-2 border transition-colors text-center ${
+                className={`flex-1 px-3 py-2 border transition-colors active:scale-[0.97] text-center ${
                   riskLevel === id
                     ? "border-terminal-green text-terminal-green bg-terminal-green/5"
                     : "border-terminal-border text-gray-500 hover:text-white hover:border-gray-500"
@@ -192,7 +192,7 @@ export default function AgentSettings({ walletAddress }: AgentSettingsProps) {
       <button
         onClick={handleSave}
         disabled={saving}
-        className={`w-full py-2.5 border text-[10px] font-bold uppercase tracking-wider transition-colors ${
+        className={`w-full py-2.5 border text-[10px] font-bold uppercase tracking-wider transition-colors active:scale-[0.97] ${
           saved
             ? "border-terminal-green text-terminal-green bg-terminal-green/10"
             : "border-terminal-green text-terminal-green hover:bg-terminal-green/10 disabled:opacity-50"

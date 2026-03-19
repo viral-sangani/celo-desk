@@ -75,16 +75,16 @@ export default function DepositModal({ isOpen, onClose, agentWalletAddress, onSu
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 animate-backdrop-in"
       onClick={handleBackdropClick}
     >
-      <div className="max-w-sm w-full mx-3 sm:mx-0 border-panel bg-[#0a0a0a] p-0">
+      <div className="max-w-sm w-full mx-3 sm:mx-0 border-panel bg-[#0a0a0a] p-0 animate-modal-in">
         {/* Header */}
         <div className="panel-header flex items-center justify-between">
           <span className="text-gray-400">DEPOSIT USDT</span>
           <button
             onClick={handleClose}
-            className="text-gray-500 hover:text-white text-sm leading-none"
+            className="text-gray-500 hover:text-white text-sm leading-none transition-colors active:scale-[0.97]"
             disabled={loading}
           >
             {"\u2715"}
@@ -108,7 +108,7 @@ export default function DepositModal({ isOpen, onClose, agentWalletAddress, onSu
                 type="text"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                className="w-full bg-black border border-terminal-border p-2 text-white font-mono text-sm focus:outline-none focus:border-terminal-green"
+                className="w-full bg-black border border-terminal-border p-2 text-white font-mono text-sm focus:outline-none focus:border-terminal-green transition-colors"
                 placeholder="0.00"
                 disabled={loading}
               />
@@ -136,7 +136,7 @@ export default function DepositModal({ isOpen, onClose, agentWalletAddress, onSu
           <button
             onClick={handleDeposit}
             disabled={loading || !account || !amount || parseFloat(amount) <= 0}
-            className="w-full py-2 border border-terminal-green text-terminal-green text-[10px] font-bold uppercase tracking-wider hover:bg-terminal-green/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full py-2 border border-terminal-green text-terminal-green text-[10px] font-bold uppercase tracking-wider hover:bg-terminal-green/10 transition-colors active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? "SENDING..." : success ? "DEPOSITED" : "DEPOSIT"}
           </button>
