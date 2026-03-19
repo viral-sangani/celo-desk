@@ -18,15 +18,20 @@ const TV_SYMBOLS: Record<string, string> = {
 };
 
 // GeckoTerminal pool addresses on Celo for DEX-traded tokens
-// These show real on-chain trading data from Uniswap/Mento pools
+// Verified against https://docs.celo.org/tooling/contracts/token-contracts
+// and https://api.geckoterminal.com/api/v2/networks/celo/tokens/{address}/pools
 const GECKO_POOLS: Record<string, string> = {
-  // Mento stablecoins with DEX liquidity
-  USDm: "0x5dc631ad6c26bea1a59fbf2c2680cf3df43d249f",
-  EURm: "0x628cb3a5a206956423d158009612813b64b19dab",
-  BRLm: "0x1625fe58cdb3726e5841fb2bb367dde9aaa009b3",
-  KESm: "0x61ef8708fc240dc7f9f2c0d81c3124df2fd8829f",
-  COPm: "0x2ac5baa668a8a58fd0e302b9896717484fd217b0",
-  PHPm: "0x87dec9a2589d9e6511df84c193561b3a16cf6238",
+  // Mento stablecoins — highest liquidity pools
+  USDm: "0x34757893070b0fc5de37aaf2844255ff90f7f1e0",   // USDC / cUSD
+  EURm: "0x1c8dafd358d308b880f71edb5170b010b106ca60",   // cEUR / cUSD
+  BRLm: "0x67449e82a0d354d34e6b7487a968eb3e15cd47b9",   // cREAL / cUSD
+  KESm: "0x61ef8708fc240dc7f9f2c0d81c3124df2fd8829f",   // cKES / USD₮
+  COPm: "0x2ac5baa668a8a58fd0e302b9896717484fd217b0",   // USD₮ / cCOP
+  PHPm: "0xb466d5429d6ad9999bf112c225d9d7b15e96c658",   // PUSO / USDC
+  XOFm: "0xaa97f0689660ea15b7d6f84f2e5250b63f2b381a",   // eXOF / cUSD
+  NGNm: "0x1e2f87e1f8056fcd39695aaeb63cb475e1dd2318",   // cNGN / USD₮
+  JPYm: "0x04feae0d4a3d0051397ee09314dad768a37fb539",   // cJPY / USD₮
+  CHFm: "0x1aa2f83357150f811b1010c00020abe1462feb01",   // cCHF / USD₮
 };
 
 interface PriceChartProps {
