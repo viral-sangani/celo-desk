@@ -533,9 +533,23 @@ export const refreshPortfolio = action({
       agentId: agent._id,
       holdings,
     });
-    const initialValue = agent.initialPortfolioValue ?? totalValue;
-    const pnl = totalValue - initialValue;
-    const pnlPercent = initialValue > 0 ? (pnl / initialValue) * 100 : 0;
+    // Calculate P/L per token: current value vs cost basis (what was spent to buy it)
+    const costBasis = await ctx.runQuery(internal.agentTradingInternal.getCostBasisPerToken, { agentId: agent._id });
+    let totalCostBasis = 0;
+    let totalCurrentValue = 0;
+    for (const h of holdings) {
+      const spent = costBasis[h.token] ?? 0;
+      totalCostBasis += spent;
+      totalCurrentValue += h.valueUsd;
+    }
+    // Add USDT cost basis (USDT wasn't "bought", it was deposited, so cost = amount)
+    const usdtHolding = holdings.find((h) => h.token === "USDT");
+    if (usdtHolding) {
+      totalCostBasis += usdtHolding.valueUsd; // USDT cost basis = its value (1:1)
+    }
+
+    const pnl = totalValue - totalCostBasis;
+    const pnlPercent = totalCostBasis > 0 ? (pnl / totalCostBasis) * 100 : 0;
 
     await ctx.runMutation(internal.agentTradingMutations.updateAgentMetrics, {
       agentId: agent._id,
@@ -545,7 +559,7 @@ export const refreshPortfolio = action({
       totalTrades: agent.totalTrades,
       lastTradeAt: agent.lastTradeAt ?? Date.now(),
       nextTradeAt: Date.now() + 300000,
-      initialPortfolioValue: initialValue,
+      initialPortfolioValue: totalCostBasis > 0 ? totalCostBasis : totalValue,
     });
   },
 });
@@ -662,15 +676,21 @@ export const executeTradeNow = action({
 
       await ctx.runMutation(internal.agentTradingMutations.updateHoldings, { agentId: agent._id, holdings });
 
-      const initialValue = agent.initialPortfolioValue ?? totalValue;
-      const pnl = totalValue - initialValue;
-      const pnlPercent = initialValue > 0 ? (pnl / initialValue) * 100 : 0;
+      const costBasis = await ctx.runQuery(internal.agentTradingInternal.getCostBasisPerToken, { agentId: agent._id });
+      let totalCostBasis = 0;
+      for (const h of holdings) {
+        totalCostBasis += costBasis[h.token] ?? 0;
+      }
+      const usdtH = holdings.find((h) => h.token === "USDT");
+      if (usdtH) totalCostBasis += usdtH.valueUsd;
+      const pnl = totalValue - totalCostBasis;
+      const pnlPercent = totalCostBasis > 0 ? (pnl / totalCostBasis) * 100 : 0;
 
       await ctx.runMutation(internal.agentTradingMutations.updateAgentMetrics, {
         agentId: agent._id, portfolioValue: totalValue, pnl, pnlPercent,
         totalTrades: agent.totalTrades + (decision.action === "swap" ? 1 : 0),
         lastTradeAt: Date.now(), nextTradeAt: Date.now() + 300000,
-        initialPortfolioValue: initialValue,
+        initialPortfolioValue: totalCostBasis > 0 ? totalCostBasis : totalValue,
       });
 
       return { success: true, decision: `${decision.action}: ${decision.reason}` };
@@ -846,9 +866,15 @@ export const executeTrades = internalAction({
           holdings,
         });
 
-        const initialValue = agent.initialPortfolioValue ?? totalValue;
-        const pnl = totalValue - initialValue;
-        const pnlPercent = initialValue > 0 ? (pnl / initialValue) * 100 : 0;
+        const costBasisCron = await ctx.runQuery(internal.agentTradingInternal.getCostBasisPerToken, { agentId: agent._id });
+        let totalCostBasisCron = 0;
+        for (const h of holdings) {
+          totalCostBasisCron += costBasisCron[h.token] ?? 0;
+        }
+        const usdtHCron = holdings.find((h) => h.token === "USDT");
+        if (usdtHCron) totalCostBasisCron += usdtHCron.valueUsd;
+        const pnl = totalValue - totalCostBasisCron;
+        const pnlPercent = totalCostBasisCron > 0 ? (pnl / totalCostBasisCron) * 100 : 0;
 
         await ctx.runMutation(internal.agentTradingMutations.updateAgentMetrics, {
           agentId: agent._id,
@@ -858,7 +884,7 @@ export const executeTrades = internalAction({
           totalTrades: agent.totalTrades + (decision.action === "swap" ? 1 : 0),
           lastTradeAt: Date.now(),
           nextTradeAt: Date.now() + 300000,
-          initialPortfolioValue: initialValue,
+          initialPortfolioValue: totalCostBasisCron > 0 ? totalCostBasisCron : totalValue,
         });
       } catch (err) {
         console.error(`Agent ${agent.name} trade error:`, err);

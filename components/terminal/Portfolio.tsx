@@ -15,6 +15,9 @@ interface Holding {
   amount: number;
   valueUsd: number;
   allocationPercent: number;
+  costBasisUsd?: number;
+  pnl?: number;
+  pnlPercent?: number;
 }
 
 const EMPTY_HOLDINGS: Holding[] = [];
@@ -93,7 +96,7 @@ export default function Portfolio({ connected, walletAddress }: PortfolioProps) 
   const executeTradeNow = useAction(api.agentTrading.executeTradeNow);
 
   const holdings = useQuery(
-    api.agents.getHoldings,
+    api.agents.getHoldingsWithPnL,
     userAgent?._id ? { agentId: userAgent._id } : "skip"
   );
 
@@ -331,6 +334,7 @@ export default function Portfolio({ connected, walletAddress }: PortfolioProps) 
                     <th className="pb-2 font-normal">Token</th>
                     <th className="pb-2 font-normal text-right">Amount</th>
                     <th className="pb-2 font-normal text-right">Value</th>
+                    <th className="pb-2 font-normal text-right">P/L</th>
                     <th className="pb-2 font-normal text-right">%</th>
                   </tr>
                 </thead>
@@ -339,9 +343,12 @@ export default function Portfolio({ connected, walletAddress }: PortfolioProps) 
                     <tr key={h.token} className="h-8">
                       <td>{h.token}</td>
                       <td className="text-right">
-                        {h.amount.toLocaleString()}
+                        {h.amount.toLocaleString(undefined, { maximumFractionDigits: 3 })}
                       </td>
                       <td className="text-right">{formatUsd(h.valueUsd)}</td>
+                      <td className={`text-right ${(h.pnl ?? 0) >= 0 ? "text-terminal-green" : "text-terminal-red"}`}>
+                        {(h.pnl ?? 0) >= 0 ? "+" : ""}{formatUsd(h.pnl ?? 0)}
+                      </td>
                       <td className="text-right">{h.allocationPercent.toFixed(1)}%</td>
                     </tr>
                   ))}
