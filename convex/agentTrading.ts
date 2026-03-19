@@ -31,6 +31,11 @@ const DECIMALS: Record<string, number> = {
 
 const UNISWAP_ROUTER = "0x5615CDAb10dc425a742d643d949a7F474C01abc4";
 
+// Celo fee abstraction: USDT fee currency adapter
+// Allows paying gas fees with USDT instead of native CELO
+// See: https://docs.celo.org/tooling/overview/fee-abstraction
+const USDT_FEE_ADAPTER = "0x0e2a3e05bc9a16f5292a6170456a710cb89c6f72";
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -91,38 +96,65 @@ async function getOnChainBalances(client: any, agentAddress: string) {
   return balances;
 }
 
+async function getViemAccount(userAddress: string) {
+  const secretKey = process.env.THIRDWEB_SECRET_KEY!;
+  const hash = crypto
+    .createHmac("sha256", secretKey)
+    .update(`agent_wallet_${userAddress}`)
+    .digest("hex");
+  const { privateKeyToAccount: viemPKToAccount } = await import("viem/accounts");
+  return viemPKToAccount(`0x${hash}` as `0x${string}`);
+}
+
 async function executeSwap(
   client: any,
   account: any,
   fromTokenAddr: string,
   toTokenAddr: string,
-  amountIn: bigint
+  amountIn: bigint,
+  userAddress: string
 ) {
-  const { getContract, prepareContractCall, sendTransaction } = await import("thirdweb");
-  const { celo } = await import("thirdweb/chains");
+  const { createPublicClient, createWalletClient, http, encodeFunctionData } = await import("viem");
+  const { celo: celoChain } = await import("viem/chains");
 
-  // Approve router
-  const tokenContract = getContract({
-    client,
-    chain: celo,
-    address: fromTokenAddr as `0x${string}`,
-  });
-  const approveTx = prepareContractCall({
-    contract: tokenContract,
-    method: "function approve(address spender, uint256 amount) returns (bool)",
-    params: [UNISWAP_ROUTER, amountIn],
-  });
-  await sendTransaction({ transaction: approveTx, account });
+  // Get viem account (needed for feeCurrency support)
+  const viemAccount = await getViemAccount(userAddress);
 
-  // Execute swap
-  const router = getContract({
-    client,
-    chain: celo,
-    address: UNISWAP_ROUTER as `0x${string}`,
+  const publicClient = createPublicClient({
+    chain: celoChain,
+    transport: http(),
   });
-  const { prepareTransaction } = await import("thirdweb");
-  const { encodeFunctionData } = await import("viem");
 
+  const walletClient = createWalletClient({
+    account: viemAccount,
+    chain: celoChain,
+    transport: http(),
+  });
+
+  // Step 1: Approve router for the input token (with fee abstraction)
+  const approveData = encodeFunctionData({
+    abi: [{
+      name: "approve",
+      type: "function",
+      stateMutability: "nonpayable",
+      inputs: [
+        { name: "spender", type: "address" },
+        { name: "amount", type: "uint256" },
+      ],
+      outputs: [{ name: "", type: "bool" }],
+    }],
+    functionName: "approve",
+    args: [UNISWAP_ROUTER as `0x${string}`, amountIn],
+  });
+
+  const approveHash = await walletClient.sendTransaction({
+    to: fromTokenAddr as `0x${string}`,
+    data: approveData,
+    feeCurrency: USDT_FEE_ADAPTER as `0x${string}`,
+  });
+  await publicClient.waitForTransactionReceipt({ hash: approveHash });
+
+  // Step 2: Execute swap on Uniswap V3 (with fee abstraction)
   const swapData = encodeFunctionData({
     abi: [{
       name: "exactInputSingle",
@@ -148,21 +180,21 @@ async function executeSwap(
       tokenIn: fromTokenAddr as `0x${string}`,
       tokenOut: toTokenAddr as `0x${string}`,
       fee: 3000,
-      recipient: account.address,
+      recipient: viemAccount.address,
       amountIn,
       amountOutMinimum: BigInt(0),
       sqrtPriceLimitX96: BigInt(0),
     }],
   });
 
-  const swapTx = prepareTransaction({
-    client,
-    chain: celo,
+  const swapHash = await walletClient.sendTransaction({
     to: UNISWAP_ROUTER as `0x${string}`,
     data: swapData,
+    feeCurrency: USDT_FEE_ADAPTER as `0x${string}`,
   });
+  const receipt = await publicClient.waitForTransactionReceipt({ hash: swapHash });
 
-  return await sendTransaction({ transaction: swapTx, account });
+  return { transactionHash: swapHash };
 }
 
 async function fetchNewsFromParallel(): Promise<string> {
@@ -444,7 +476,7 @@ export const executeTradeNow = action({
         const toAddr = TOKEN_ADDRESSES[decision.toToken];
         if (!fromAddr || !toAddr) return { success: true, decision: "hold (unknown token address)" };
 
-        const result = await executeSwap(client, account, fromAddr, toAddr, amountInWei);
+        const result = await executeSwap(client, account, fromAddr, toAddr, amountInWei, addr);
         const fromPrice = prices.find((p: any) => p.token === decision.fromToken)?.priceUsd ?? 0;
 
         await ctx.runMutation(internal.agentTradingMutations.recordTrade, {
@@ -576,7 +608,7 @@ export const executeTrades = internalAction({
           const toAddr = TOKEN_ADDRESSES[decision.toToken];
           if (!fromAddr || !toAddr) continue;
 
-          const result = await executeSwap(client, account, fromAddr, toAddr, amountInWei);
+          const result = await executeSwap(client, account, fromAddr, toAddr, amountInWei, agent.userAddress!);
 
           const fromPrice =
             prices.find((p: any) => p.token === decision.fromToken)?.priceUsd ?? 0;

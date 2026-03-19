@@ -53,7 +53,8 @@ export default function DepositModal({ isOpen, onClose, agentWalletAddress, onSu
       await sendTransaction({ transaction: tx, account });
 
       setSuccess(true);
-      onSuccess?.();
+      // Wait briefly for chain to settle, then refresh portfolio
+      setTimeout(() => onSuccess?.(), 2000);
       setTimeout(() => {
         setSuccess(false);
         setAmount("");
