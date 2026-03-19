@@ -73,11 +73,11 @@ export default function LandingPage() {
       {/* Nav */}
       <nav className="border-b border-[#333] bg-black sticky top-0 z-50 px-4 sm:px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-6 sm:gap-10">
-          <span className="flex items-center gap-2">
-            <Image src="/celodesk-logo.png" alt="Celo Desk" width={32} height={32} className="w-7 h-7 sm:w-8 sm:h-8" />
-            <span className="leading-none">
-              <span className="text-[#FFEB3B] font-bold tracking-tight text-base sm:text-lg block leading-none">CELO</span>
-              <span className="text-white font-bold tracking-[0.2em] text-[10px] sm:text-xs block leading-none">DESK</span>
+          <span className="flex items-center gap-1.5">
+            <Image src="/celodesk-logo.png" alt="Celo Desk" width={28} height={28} className="w-6 h-6 sm:w-7 sm:h-7" />
+            <span className="font-bold tracking-tight text-base sm:text-lg">
+              <span className="text-[#FFEB3B]">CELO</span>
+              <span className="text-white ml-1">DESK</span>
             </span>
           </span>
           <div className="hidden md:flex gap-6 text-[11px] uppercase tracking-[0.2em]">
@@ -422,10 +422,10 @@ export default function LandingPage() {
       <footer className="px-4 sm:px-6 py-8 border-t border-[#222] flex flex-col sm:flex-row items-center justify-between gap-4 text-[10px] text-gray-500">
         <div className="flex items-center gap-4">
           <span className="flex items-center gap-1.5">
-            <Image src="/celodesk-logo.png" alt="Celo Desk" width={20} height={20} />
-            <span className="leading-none">
-              <span className="text-[#FFEB3B] font-bold tracking-tight text-xs block leading-none">CELO</span>
-              <span className="text-gray-300 font-bold tracking-[0.15em] text-[8px] block leading-none">DESK</span>
+            <Image src="/celodesk-logo.png" alt="Celo Desk" width={18} height={18} />
+            <span className="font-bold tracking-tight text-sm">
+              <span className="text-[#FFEB3B]">CELO</span>
+              <span className="text-gray-300 ml-0.5">DESK</span>
             </span>
           </span>
           <div className="flex gap-3 uppercase tracking-wider">
