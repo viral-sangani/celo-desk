@@ -5,10 +5,6 @@ import { internal } from "./_generated/api";
 
 const TOKENS = ["CELO", "BTC", "ETH"];
 
-function sleep(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
 export const fetchSentiment = internalAction({
   args: {},
   handler: async (ctx) => {
@@ -20,71 +16,76 @@ export const fetchSentiment = internalAction({
 
     // Fetch current prices for accurate sentiment context
     const prices = await ctx.runQuery(internal.agentTradingInternal.getAllPrices, {});
+    const priceContext = TOKENS.map((token) => {
+      const tp = prices.find((p: any) => p.token === token);
+      return tp
+        ? `${token}: $${tp.priceUsd.toFixed(2)} (24h: ${tp.change24h >= 0 ? "+" : ""}${tp.change24h.toFixed(2)}%)`
+        : `${token}: no price data`;
+    }).join(", ");
 
     const now = Date.now();
-    const items: Array<{
-      token: string;
-      sentiment: string;
-      score: number;
-      summary: string;
-      topTweets: string;
-      source: string;
-      timestamp: number;
-    }> = [];
 
-    for (let i = 0; i < TOKENS.length; i++) {
-      const token = TOKENS[i];
-      if (i > 0) await sleep(3000); // 3s delay between calls to avoid 429
+    try {
+      // Single Grok call for all tokens
+      const res = await fetch("https://api.x.ai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: "grok-3-mini-fast",
+          messages: [
+            {
+              role: "user",
+              content: `Current prices: ${priceContext}.
 
-      try {
-        const res = await fetch("https://api.x.ai/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${apiKey}`,
-          },
-          body: JSON.stringify({
-            model: "grok-3-mini-fast",
-            messages: [
-              {
-                role: "user",
-                content: `${(() => {
-                  const tp = prices.find((p: any) => p.token === token);
-                  return tp ? `Current ${token} price: $${tp.priceUsd.toFixed(2)}, 24h change: ${tp.change24h >= 0 ? "+" : ""}${tp.change24h.toFixed(2)}%. ` : "";
-                })()}Analyze current Twitter/X sentiment for ${token} crypto token. Your sentiment assessment MUST be consistent with the actual price movement data provided. If the token is down significantly, sentiment should lean bearish. Rate sentiment from -100 (extremely bearish) to +100 (extremely bullish). Include top 3 recent relevant tweets with their URLs. Respond ONLY with valid JSON, no markdown: {"sentiment": "bullish"|"bearish"|"neutral", "score": number, "summary": "2-3 sentence analysis", "topTweets": [{"text": "tweet text", "author": "@handle", "url": "https://x.com/..."}]}`,
-              },
-            ],
-          }),
-        });
+Analyze current Twitter/X sentiment for each of these crypto tokens: ${TOKENS.join(", ")}.
+Your sentiment assessment MUST be consistent with the actual price movement data provided. If a token is down significantly, sentiment should lean bearish.
+Rate each token's sentiment from -100 (extremely bearish) to +100 (extremely bullish).
 
-        if (!res.ok) {
-          const body = await res.text();
-          console.error(`Grok sentiment failed for ${token}: ${res.status} ${body}`);
-          continue;
-        }
+Respond ONLY with a valid JSON array, no markdown:
+[{"token": "CELO", "sentiment": "bullish"|"bearish"|"neutral", "score": number, "summary": "2-3 sentence analysis"}, ...]
+Return one entry per token.`,
+            },
+          ],
+        }),
+      });
 
-        const data = await res.json();
-        const text = data.choices?.[0]?.message?.content || "";
-        const jsonMatch = text.match(/\{[\s\S]*\}/);
-        if (!jsonMatch) continue;
+      if (!res.ok) {
+        const body = await res.text();
+        console.error(`Grok sentiment failed: ${res.status} ${body}`);
+        return;
+      }
 
-        const parsed = JSON.parse(jsonMatch[0]);
-        items.push({
-          token,
-          sentiment: parsed.sentiment ?? "neutral",
-          score: typeof parsed.score === "number" ? parsed.score : 0,
-          summary: parsed.summary ?? "",
-          topTweets: JSON.stringify(parsed.topTweets ?? []),
+      const data = await res.json();
+      const text = data.choices?.[0]?.message?.content || "";
+      const jsonMatch = text.match(/\[[\s\S]*\]/);
+      if (!jsonMatch) {
+        console.error("Grok sentiment: could not parse JSON array");
+        return;
+      }
+
+      const parsed = JSON.parse(jsonMatch[0]);
+      if (!Array.isArray(parsed)) return;
+
+      const items = parsed
+        .filter((p: any) => TOKENS.includes(p.token))
+        .map((p: any) => ({
+          token: p.token,
+          sentiment: p.sentiment ?? "neutral",
+          score: typeof p.score === "number" ? p.score : 0,
+          summary: p.summary ?? "",
+          topTweets: "[]",
           source: "grok",
           timestamp: now,
-        });
-      } catch (err) {
-        console.error(`Sentiment error for ${token}:`, err);
-      }
-    }
+        }));
 
-    if (items.length > 0) {
-      await ctx.runMutation(internal.scraperMutations.saveSocialSentiment, { items });
+      if (items.length > 0) {
+        await ctx.runMutation(internal.scraperMutations.saveSocialSentiment, { items });
+      }
+    } catch (err) {
+      console.error("fetchSentiment error:", err);
     }
   },
 });

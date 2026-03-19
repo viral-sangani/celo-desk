@@ -33,13 +33,20 @@ function getSentimentBadge(sentiment?: string) {
   );
 }
 
+const INTEL_PAGE_SIZE = 10;
+
 export default function IntelFeed() {
   const [filter, setFilter] = useState<FilterType>("all");
-  const intel = useQuery(api.latestIntel.getLatestIntel, { limit: 50 });
+  const [page, setPage] = useState(0);
+  const intel = useQuery(api.latestIntel.getLatestIntel, { limit: 100 });
 
   const filtered = intel?.filter(
     (item) => filter === "all" || item.type === filter
   );
+
+  const totalItems = filtered?.length ?? 0;
+  const totalPages = Math.max(1, Math.ceil(totalItems / INTEL_PAGE_SIZE));
+  const pagedItems = filtered?.slice(page * INTEL_PAGE_SIZE, (page + 1) * INTEL_PAGE_SIZE) ?? [];
 
   const filters: { id: FilterType; label: string }[] = [
     { id: "all", label: "ALL" },
@@ -57,7 +64,7 @@ export default function IntelFeed() {
         {filters.map((f) => (
           <button
             key={f.id}
-            onClick={() => setFilter(f.id)}
+            onClick={() => { setFilter(f.id); setPage(0); }}
             className={`px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
               filter === f.id
                 ? "bg-terminal-green/10 text-terminal-green border border-terminal-green/30"
@@ -76,7 +83,7 @@ export default function IntelFeed() {
             No intelligence data yet. Crons will populate this feed.
           </div>
         ) : (
-          filtered.map((item) => {
+          pagedItems.map((item) => {
             const time = new Date(item.timestamp);
             const timeStr = `${String(time.getHours()).padStart(2, "0")}:${String(time.getMinutes()).padStart(2, "0")}`;
             return (
@@ -129,6 +136,28 @@ export default function IntelFeed() {
           })
         )}
       </div>
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between px-3 py-1.5 border-t border-terminal-border bg-[#111]">
+          <button
+            onClick={() => setPage((p) => Math.max(0, p - 1))}
+            disabled={page === 0}
+            className="text-[10px] text-gray-500 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
+          >
+            &larr; PREV
+          </button>
+          <span className="text-[10px] text-gray-600">
+            {page + 1} / {totalPages}
+          </span>
+          <button
+            onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+            disabled={page >= totalPages - 1}
+            className="text-[10px] text-gray-500 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
+          >
+            NEXT &rarr;
+          </button>
+        </div>
+      )}
     </div>
   );
 }

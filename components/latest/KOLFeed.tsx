@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 
@@ -9,8 +10,15 @@ function getSentimentColor(sentiment?: string): string {
   return "text-gray-400";
 }
 
+const PAGE_SIZE = 10;
+
 export default function KOLFeed() {
-  const tweets = useQuery(api.latestIntel.getKolTweets, { limit: 15 });
+  const [page, setPage] = useState(0);
+  const tweets = useQuery(api.latestIntel.getKolTweets, { limit: 50 });
+
+  const totalItems = tweets?.length ?? 0;
+  const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
+  const pagedTweets = tweets?.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE) ?? [];
 
   return (
     <div className="border border-terminal-border bg-[#0a0a0a]">
@@ -23,17 +31,17 @@ export default function KOLFeed() {
       <div className="max-h-[400px] overflow-y-auto">
         {!tweets || tweets.length === 0 ? (
           <div className="p-6 text-center text-xs text-gray-600">
-            Waiting for KOL data... X API will fetch latest tweets from key influencers.
+            Waiting for KOL data... Grok will generate summaries from key influencers.
           </div>
         ) : (
-          tweets.map((tweet) => {
+          pagedTweets.map((tweet, i) => {
             const time = new Date(tweet.timestamp);
             const timeStr = `${String(time.getHours()).padStart(2, "0")}:${String(time.getMinutes()).padStart(2, "0")}`;
             const handle = (tweet.handle ?? "").replace(/^@/, "");
             const profileUrl = handle ? `https://x.com/${handle}` : null;
             return (
               <div
-                key={tweet._id}
+                key={`${tweet._id}-${i}`}
                 className="px-3 py-2.5 border-b border-terminal-border/50 hover:bg-white/[0.02]"
               >
                 <div className="flex items-center gap-2 mb-1">
@@ -96,6 +104,28 @@ export default function KOLFeed() {
           })
         )}
       </div>
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between px-3 py-1.5 border-t border-terminal-border bg-[#111]">
+          <button
+            onClick={() => setPage((p) => Math.max(0, p - 1))}
+            disabled={page === 0}
+            className="text-[10px] text-gray-500 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
+          >
+            &larr; PREV
+          </button>
+          <span className="text-[10px] text-gray-600">
+            {page + 1} / {totalPages}
+          </span>
+          <button
+            onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+            disabled={page >= totalPages - 1}
+            className="text-[10px] text-gray-500 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
+          >
+            NEXT &rarr;
+          </button>
+        </div>
+      )}
     </div>
   );
 }

@@ -147,13 +147,15 @@ export const saveKolTweets = internalMutation({
   },
   handler: async (ctx, args) => {
     for (const item of args.items) {
-      // Deduplicate by handle + text prefix
+      // Deduplicate by handle — keep only latest entry per KOL
       const existing = await ctx.db
         .query("kolTweets")
         .withIndex("by_handle", (q) => q.eq("handle", item.handle))
-        .filter((q) => q.eq(q.field("text"), item.text))
+        .order("desc")
         .first();
-      if (!existing) {
+      if (existing) {
+        await ctx.db.replace(existing._id, item);
+      } else {
         await ctx.db.insert("kolTweets", item);
       }
     }
