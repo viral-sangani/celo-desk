@@ -22,6 +22,7 @@ export default defineSchema({
     personality: v.optional(v.string()),        // "dip_buyer" | "momentum" | "stablecoin_farmer" | "celo_maxi" | "custom"
     personalityPrompt: v.optional(v.string()),  // custom prompt text
     riskLevel: v.optional(v.string()),          // "conservative" | "moderate" | "aggressive"
+    initialPortfolioValue: v.optional(v.float64()), // Portfolio value at first trade (for P/L)
     createdAt: v.float64(),
   })
     .index("by_status", ["status"])

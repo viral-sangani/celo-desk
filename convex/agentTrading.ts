@@ -533,14 +533,19 @@ export const refreshPortfolio = action({
       agentId: agent._id,
       holdings,
     });
+    const initialValue = agent.initialPortfolioValue ?? totalValue;
+    const pnl = totalValue - initialValue;
+    const pnlPercent = initialValue > 0 ? (pnl / initialValue) * 100 : 0;
+
     await ctx.runMutation(internal.agentTradingMutations.updateAgentMetrics, {
       agentId: agent._id,
       portfolioValue: totalValue,
-      pnl: agent.pnl, // Keep existing PnL for now
-      pnlPercent: agent.pnlPercent,
+      pnl,
+      pnlPercent,
       totalTrades: agent.totalTrades,
       lastTradeAt: agent.lastTradeAt ?? Date.now(),
       nextTradeAt: Date.now() + 300000,
+      initialPortfolioValue: initialValue,
     });
   },
 });
@@ -656,10 +661,16 @@ export const executeTradeNow = action({
       for (const h of holdings) h.allocationPercent = totalValue > 0 ? (h.valueUsd / totalValue) * 100 : 0;
 
       await ctx.runMutation(internal.agentTradingMutations.updateHoldings, { agentId: agent._id, holdings });
+
+      const initialValue = agent.initialPortfolioValue ?? totalValue;
+      const pnl = totalValue - initialValue;
+      const pnlPercent = initialValue > 0 ? (pnl / initialValue) * 100 : 0;
+
       await ctx.runMutation(internal.agentTradingMutations.updateAgentMetrics, {
-        agentId: agent._id, portfolioValue: totalValue, pnl: agent.pnl, pnlPercent: agent.pnlPercent,
+        agentId: agent._id, portfolioValue: totalValue, pnl, pnlPercent,
         totalTrades: agent.totalTrades + (decision.action === "swap" ? 1 : 0),
         lastTradeAt: Date.now(), nextTradeAt: Date.now() + 300000,
+        initialPortfolioValue: initialValue,
       });
 
       return { success: true, decision: `${decision.action}: ${decision.reason}` };
@@ -834,14 +845,20 @@ export const executeTrades = internalAction({
           agentId: agent._id,
           holdings,
         });
+
+        const initialValue = agent.initialPortfolioValue ?? totalValue;
+        const pnl = totalValue - initialValue;
+        const pnlPercent = initialValue > 0 ? (pnl / initialValue) * 100 : 0;
+
         await ctx.runMutation(internal.agentTradingMutations.updateAgentMetrics, {
           agentId: agent._id,
           portfolioValue: totalValue,
-          pnl: agent.pnl,
-          pnlPercent: agent.pnlPercent,
+          pnl,
+          pnlPercent,
           totalTrades: agent.totalTrades + (decision.action === "swap" ? 1 : 0),
           lastTradeAt: Date.now(),
           nextTradeAt: Date.now() + 300000,
+          initialPortfolioValue: initialValue,
         });
       } catch (err) {
         console.error(`Agent ${agent.name} trade error:`, err);
@@ -850,8 +867,8 @@ export const executeTrades = internalAction({
           await ctx.runMutation(internal.agentTradingMutations.updateAgentMetrics, {
             agentId: agent._id,
             portfolioValue: agent.portfolioValue,
-            pnl: agent.pnl,
-            pnlPercent: agent.pnlPercent,
+            pnl: agent.pnl ?? 0,
+            pnlPercent: agent.pnlPercent ?? 0,
             totalTrades: agent.totalTrades,
             lastTradeAt: agent.lastTradeAt ?? Date.now(),
             nextTradeAt: Date.now() + 300000,

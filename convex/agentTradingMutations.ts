@@ -65,6 +65,7 @@ export const updateAgentMetrics = internalMutation({
     totalTrades: v.float64(),
     lastTradeAt: v.float64(),
     nextTradeAt: v.float64(),
+    initialPortfolioValue: v.optional(v.float64()),
   },
   handler: async (ctx, args) => {
     const { agentId, ...metrics } = args;

@@ -288,8 +288,8 @@ export default function Portfolio({ connected, walletAddress }: PortfolioProps) 
             </div>
             <div className="mb-6">
               <div className="text-gray-500 text-[10px]">TOTAL P/L</div>
-              <div className="text-lg font-bold text-terminal-green">
-                +{formatUsd(agentData.pnl)} ({agentData.pnlPercent}%)
+              <div className={`text-lg font-bold ${agentData.pnl >= 0 ? "text-terminal-green" : "text-terminal-red"}`}>
+                {agentData.pnl >= 0 ? "+" : ""}{formatUsd(agentData.pnl)} ({agentData.pnlPercent?.toFixed(2) ?? "0.00"}%)
               </div>
             </div>
             {/* Donut Chart */}
@@ -342,7 +342,7 @@ export default function Portfolio({ connected, walletAddress }: PortfolioProps) 
                         {h.amount.toLocaleString()}
                       </td>
                       <td className="text-right">{formatUsd(h.valueUsd)}</td>
-                      <td className="text-right">{h.allocationPercent}%</td>
+                      <td className="text-right">{h.allocationPercent.toFixed(1)}%</td>
                     </tr>
                   ))}
                 </tbody>
