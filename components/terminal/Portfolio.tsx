@@ -9,6 +9,7 @@ import { formatUsd } from "@/lib/format";
 import { TOKEN_COLORS } from "@/lib/constants";
 import DepositModal from "./DepositModal";
 import WithdrawModal from "./WithdrawModal";
+import WithdrawAllModal from "./WithdrawAllModal";
 
 interface Holding {
   token: string;
@@ -84,6 +85,7 @@ interface PortfolioProps {
 export default function Portfolio({ connected, walletAddress }: PortfolioProps) {
   const [showDeposit, setShowDeposit] = useState(false);
   const [showWithdraw, setShowWithdraw] = useState(false);
+  const [showWithdrawAll, setShowWithdrawAll] = useState(false);
   const [creating, setCreating] = useState(false);
 
   const userAgent = useQuery(
@@ -267,6 +269,12 @@ export default function Portfolio({ connected, walletAddress }: PortfolioProps) 
             >
               {trading ? "EXECUTING..." : "Trade Now"}
             </button>
+            <button
+              onClick={() => setShowWithdrawAll(true)}
+              className="px-3 py-1 border border-terminal-red text-terminal-red text-[10px] font-bold uppercase tracking-wider hover:bg-terminal-red/10 transition-colors active:scale-[0.97]"
+            >
+              Withdraw All
+            </button>
           </div>
           {tradeResult && (
             <div className={`text-[10px] px-3 py-1.5 border ${
@@ -369,6 +377,12 @@ export default function Portfolio({ connected, walletAddress }: PortfolioProps) 
       <WithdrawModal
         isOpen={showWithdraw}
         onClose={() => setShowWithdraw(false)}
+        userAddress={walletAddress ?? ""}
+        onSuccess={handleRefreshPortfolio}
+      />
+      <WithdrawAllModal
+        isOpen={showWithdrawAll}
+        onClose={() => setShowWithdrawAll(false)}
         userAddress={walletAddress ?? ""}
         onSuccess={handleRefreshPortfolio}
       />

@@ -500,6 +500,89 @@ export const withdraw = action({
   },
 });
 
+export const withdrawAll = action({
+  args: { userAddress: v.string(), toAddress: v.string() },
+  handler: async (ctx, args): Promise<{ success: boolean; transferred: string[]; error?: string }> => {
+    try {
+      const addr = args.userAddress.toLowerCase();
+      const agent = await ctx.runQuery(
+        internal.agentWalletInternal.getAgentForUser,
+        { userAddress: addr }
+      );
+      if (!agent) return { success: false, transferred: [], error: "No agent found" };
+
+      const { client, account } = await getAgentAccount(addr);
+      const balances = await getOnChainBalances(client, agent.walletAddress);
+
+      if (balances.length === 0) return { success: false, transferred: [], error: "No balances to withdraw" };
+
+      const { createWalletClient, http, encodeFunctionData } = await import("viem");
+      const { celo: celoChain } = await import("viem/chains");
+      const viemAccount = await getViemAccount(addr);
+
+      const walletClient = createWalletClient({
+        account: viemAccount,
+        chain: celoChain,
+        transport: http(),
+      });
+
+      const { createPublicClient } = await import("viem");
+      const publicClient = createPublicClient({
+        chain: celoChain,
+        transport: http(),
+      });
+
+      const transferred: string[] = [];
+      for (const b of balances) {
+        if (b.amount <= 0) continue;
+        const amountWei = BigInt(Math.floor(b.amount * 10 ** b.decimals));
+        if (amountWei <= BigInt(0)) continue;
+
+        try {
+          const transferData = encodeFunctionData({
+            abi: [{
+              name: "transfer",
+              type: "function",
+              stateMutability: "nonpayable",
+              inputs: [
+                { name: "to", type: "address" },
+                { name: "amount", type: "uint256" },
+              ],
+              outputs: [{ name: "", type: "bool" }],
+            }],
+            functionName: "transfer",
+            args: [args.toAddress as `0x${string}`, amountWei],
+          });
+
+          const hash = await walletClient.sendTransaction({
+            to: b.address as `0x${string}`,
+            data: transferData,
+            feeCurrency: USDT_FEE_ADAPTER as `0x${string}`,
+          });
+          await publicClient.waitForTransactionReceipt({ hash });
+          transferred.push(`${b.amount.toFixed(4)} ${b.token}`);
+        } catch (err: any) {
+          console.error(`Failed to withdraw ${b.token}:`, err.message);
+        }
+      }
+
+      if (transferred.length > 0) {
+        await ctx.runMutation(internal.agentTradingMutations.recordWithdrawal, {
+          agentId: agent._id,
+          token: "ALL",
+          amount: 0,
+          txHash: "",
+          timestamp: Date.now(),
+        });
+      }
+
+      return { success: true, transferred };
+    } catch (err: any) {
+      return { success: false, transferred: [], error: err.message ?? String(err) };
+    }
+  },
+});
+
 export const refreshPortfolio = action({
   args: { userAddress: v.string() },
   handler: async (ctx, args): Promise<void> => {
