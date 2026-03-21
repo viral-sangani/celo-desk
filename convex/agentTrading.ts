@@ -532,10 +532,30 @@ export const withdrawAll = action({
         transport: http(),
       });
 
+      // Sort balances: transfer non-USDT tokens first, USDT last
+      // (because USDT is used to pay gas via fee abstraction)
+      const sorted = [...balances].sort((a, b) => {
+        if (a.token === "USDT") return 1;
+        if (b.token === "USDT") return -1;
+        return 0;
+      });
+
+      const GAS_RESERVE_USDT = 0.05; // Reserve 0.05 USDT for gas on remaining transfers
+
       const transferred: string[] = [];
-      for (const b of balances) {
+      for (let i = 0; i < sorted.length; i++) {
+        const b = sorted[i];
         if (b.amount <= 0) continue;
-        const amountWei = BigInt(Math.floor(b.amount * 10 ** b.decimals));
+
+        let transferAmount = b.amount;
+        // For USDT: if it's not the last token, reserve gas buffer
+        // If it's the last token, send everything minus a tiny gas reserve
+        if (b.token === "USDT") {
+          transferAmount = Math.max(0, b.amount - GAS_RESERVE_USDT);
+        }
+
+        if (transferAmount <= 0) continue;
+        const amountWei = BigInt(Math.floor(transferAmount * 10 ** b.decimals));
         if (amountWei <= BigInt(0)) continue;
 
         try {
@@ -560,7 +580,7 @@ export const withdrawAll = action({
             feeCurrency: USDT_FEE_ADAPTER as `0x${string}`,
           });
           await publicClient.waitForTransactionReceipt({ hash });
-          transferred.push(`${b.amount.toFixed(4)} ${b.token}`);
+          transferred.push(`${transferAmount.toFixed(4)} ${b.token}`);
         } catch (err: any) {
           console.error(`Failed to withdraw ${b.token}:`, err.message);
         }
