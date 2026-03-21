@@ -257,11 +257,20 @@ async function executeSwap(
     args: [UNISWAP_ROUTER as `0x${string}`, amountIn],
   });
 
-  const approveHash = await walletClient.sendTransaction({
-    to: fromTokenAddr as `0x${string}`,
-    data: approveData,
-    feeCurrency: USDT_FEE_ADAPTER as `0x${string}`,
-  });
+  let approveHash: `0x${string}`;
+  try {
+    approveHash = await walletClient.sendTransaction({
+      to: fromTokenAddr as `0x${string}`,
+      data: approveData,
+      feeCurrency: USDT_FEE_ADAPTER as `0x${string}`,
+    });
+  } catch {
+    // Fallback: pay gas with native CELO
+    approveHash = await walletClient.sendTransaction({
+      to: fromTokenAddr as `0x${string}`,
+      data: approveData,
+    });
+  }
   await publicClient.waitForTransactionReceipt({ hash: approveHash });
 
   // Step 3: Execute swap with slippage protection
@@ -297,11 +306,20 @@ async function executeSwap(
     }],
   });
 
-  const swapHash = await walletClient.sendTransaction({
-    to: UNISWAP_ROUTER as `0x${string}`,
-    data: swapData,
-    feeCurrency: USDT_FEE_ADAPTER as `0x${string}`,
-  });
+  let swapHash: `0x${string}`;
+  try {
+    swapHash = await walletClient.sendTransaction({
+      to: UNISWAP_ROUTER as `0x${string}`,
+      data: swapData,
+      feeCurrency: USDT_FEE_ADAPTER as `0x${string}`,
+    });
+  } catch {
+    // Fallback: pay gas with native CELO
+    swapHash = await walletClient.sendTransaction({
+      to: UNISWAP_ROUTER as `0x${string}`,
+      data: swapData,
+    });
+  }
   await publicClient.waitForTransactionReceipt({ hash: swapHash });
 
   return { transactionHash: swapHash };
@@ -542,16 +560,33 @@ export const withdrawAll = action({
 
       const GAS_RESERVE_USDT = 0.05; // Reserve 0.05 USDT for gas on remaining transfers
 
+      // Check if we have USDT for fee abstraction
+      const usdtBalance = balances.find((b) => b.token === "USDT");
+      const hasUsdtForGas = usdtBalance && usdtBalance.amount > GAS_RESERVE_USDT;
+
+      // Check if we have native CELO for gas fallback
+      const nativeCeloBalance = await publicClient.getBalance({ address: viemAccount.address });
+      const hasNativeCelo = nativeCeloBalance > BigInt(0);
+
+      if (!hasUsdtForGas && !hasNativeCelo) {
+        return {
+          success: false,
+          transferred: [],
+          error: "Insufficient gas: no USDT for fee abstraction and no native CELO for gas. Fund the agent wallet with CELO or USDT first.",
+        };
+      }
+
       const transferred: string[] = [];
       for (let i = 0; i < sorted.length; i++) {
         const b = sorted[i];
         if (b.amount <= 0) continue;
 
         let transferAmount = b.amount;
-        // For USDT: if it's not the last token, reserve gas buffer
-        // If it's the last token, send everything minus a tiny gas reserve
+        // Reserve small amounts for gas
         if (b.token === "USDT") {
           transferAmount = Math.max(0, b.amount - GAS_RESERVE_USDT);
+        } else if (b.token === "CELO") {
+          transferAmount = Math.max(0, b.amount - 0.1); // Reserve 0.1 CELO for gas
         }
 
         if (transferAmount <= 0) continue;
@@ -574,11 +609,22 @@ export const withdrawAll = action({
             args: [args.toAddress as `0x${string}`, amountWei],
           });
 
-          const hash = await walletClient.sendTransaction({
-            to: b.address as `0x${string}`,
-            data: transferData,
-            feeCurrency: USDT_FEE_ADAPTER as `0x${string}`,
-          });
+          let hash: `0x${string}`;
+          try {
+            // Try fee abstraction (pay gas with USDT) first
+            hash = await walletClient.sendTransaction({
+              to: b.address as `0x${string}`,
+              data: transferData,
+              feeCurrency: USDT_FEE_ADAPTER as `0x${string}`,
+            });
+          } catch (feeErr: any) {
+            // Fallback: pay gas with native CELO
+            console.warn(`Fee abstraction failed for ${b.token}, falling back to native CELO gas:`, feeErr.message);
+            hash = await walletClient.sendTransaction({
+              to: b.address as `0x${string}`,
+              data: transferData,
+            });
+          }
           await publicClient.waitForTransactionReceipt({ hash });
           transferred.push(`${transferAmount.toFixed(4)} ${b.token}`);
         } catch (err: any) {
