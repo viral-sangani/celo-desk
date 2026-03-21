@@ -110,6 +110,10 @@ export default function Portfolio({ connected, walletAddress }: PortfolioProps) 
   const [refreshing, setRefreshing] = useState(false);
   const [trading, setTrading] = useState(false);
   const [tradeResult, setTradeResult] = useState<string | null>(null);
+  const [withdrawingCelo, setWithdrawingCelo] = useState(false);
+  const [celoWithdrawResult, setCeloWithdrawResult] = useState<string | null>(null);
+
+  const withdrawAction = useAction(api.agentTrading.withdraw);
 
   const handleRefreshPortfolio = async () => {
     if (walletAddress) {
@@ -154,6 +158,40 @@ export default function Portfolio({ connected, walletAddress }: PortfolioProps) 
       console.error("Failed to create agent:", err);
     } finally {
       setCreating(false);
+    }
+  };
+
+  const celoHolding = holdingsData.find((h) => h.token === "CELO");
+  const showWithdrawCelo = celoHolding && celoHolding.amount > 1;
+
+  const handleWithdrawCelo = async () => {
+    if (!walletAddress || !celoHolding) return;
+    setWithdrawingCelo(true);
+    setCeloWithdrawResult(null);
+    try {
+      const withdrawAmount = celoHolding.amount - 0.1;
+      if (withdrawAmount <= 0) {
+        setCeloWithdrawResult("Error: Not enough CELO after reserving 0.1 for fees");
+        setTimeout(() => setCeloWithdrawResult(null), 5000);
+        return;
+      }
+      const result = await withdrawAction({
+        userAddress: walletAddress,
+        token: "CELO",
+        amount: withdrawAmount,
+      });
+      if (result.success) {
+        setCeloWithdrawResult(`Withdrew ${withdrawAmount.toFixed(4)} CELO (kept 0.1 for fees)`);
+        handleRefreshPortfolio();
+      } else {
+        setCeloWithdrawResult(`Error: ${result.error}`);
+      }
+      setTimeout(() => setCeloWithdrawResult(null), 5000);
+    } catch (err: any) {
+      setCeloWithdrawResult(`Error: ${err.message ?? "Withdrawal failed"}`);
+      setTimeout(() => setCeloWithdrawResult(null), 5000);
+    } finally {
+      setWithdrawingCelo(false);
     }
   };
 
@@ -269,6 +307,15 @@ export default function Portfolio({ connected, walletAddress }: PortfolioProps) 
             >
               {trading ? "EXECUTING..." : "Trade Now"}
             </button>
+            {showWithdrawCelo && (
+              <button
+                onClick={handleWithdrawCelo}
+                disabled={withdrawingCelo}
+                className="px-3 py-1 border border-yellow-500 text-yellow-400 text-[10px] font-bold uppercase tracking-wider hover:bg-yellow-500/10 transition-colors active:scale-[0.97] disabled:opacity-50"
+              >
+                {withdrawingCelo ? "WITHDRAWING..." : "Withdraw CELO"}
+              </button>
+            )}
             <button
               onClick={() => setShowWithdrawAll(true)}
               className="px-3 py-1 border border-terminal-red text-terminal-red text-[10px] font-bold uppercase tracking-wider hover:bg-terminal-red/10 transition-colors active:scale-[0.97]"
@@ -283,6 +330,15 @@ export default function Portfolio({ connected, walletAddress }: PortfolioProps) 
                 : "text-terminal-green border-terminal-green/30 bg-terminal-green/5"
             }`}>
               {tradeResult}
+            </div>
+          )}
+          {celoWithdrawResult && (
+            <div className={`text-[10px] px-3 py-1.5 border mt-1 ${
+              celoWithdrawResult.startsWith("Error")
+                ? "text-terminal-red border-terminal-red/30 bg-terminal-red/5"
+                : "text-yellow-400 border-yellow-500/30 bg-yellow-500/5"
+            }`}>
+              {celoWithdrawResult}
             </div>
           )}
         </div>

@@ -480,9 +480,12 @@ export const withdraw = action({
       );
       if (!agent) return { success: false, error: "No agent found" };
 
-      const { client, account } = await getAgentAccount(addr);
-      const { getContract, prepareContractCall, sendTransaction } = await import("thirdweb");
-      const { celo } = await import("thirdweb/chains");
+      const { createPublicClient, createWalletClient, http, encodeFunctionData } = await import("viem");
+      const { celo: celoChain } = await import("viem/chains");
+      const viemAccount = await getViemAccount(addr);
+
+      const publicClient = createPublicClient({ chain: celoChain, transport: http() });
+      const walletClient = createWalletClient({ account: viemAccount, chain: celoChain, transport: http() });
 
       const tokenAddr = TOKEN_ADDRESSES[args.token];
       const decimals = DECIMALS[args.token] ?? 18;
@@ -490,28 +493,40 @@ export const withdraw = action({
 
       const amountWei = BigInt(Math.floor(args.amount * 10 ** decimals));
 
-      const tokenContract = getContract({
-        client,
-        chain: celo,
-        address: tokenAddr as `0x${string}`,
+      const transferData = encodeFunctionData({
+        abi: [{
+          name: "transfer", type: "function", stateMutability: "nonpayable",
+          inputs: [{ name: "to", type: "address" }, { name: "amount", type: "uint256" }],
+          outputs: [{ name: "", type: "bool" }],
+        }],
+        functionName: "transfer",
+        args: [args.userAddress as `0x${string}`, amountWei],
       });
-      const tx = prepareContractCall({
-        contract: tokenContract,
-        method: "function transfer(address to, uint256 amount) returns (bool)",
-        params: [args.userAddress as `0x${string}`, amountWei],
-      });
-      const result = await sendTransaction({ transaction: tx, account });
 
-      // Record withdrawal
+      let hash: `0x${string}`;
+      try {
+        hash = await walletClient.sendTransaction({
+          to: tokenAddr as `0x${string}`,
+          data: transferData,
+          feeCurrency: USDT_FEE_ADAPTER as `0x${string}`,
+        });
+      } catch {
+        hash = await walletClient.sendTransaction({
+          to: tokenAddr as `0x${string}`,
+          data: transferData,
+        });
+      }
+      await publicClient.waitForTransactionReceipt({ hash });
+
       await ctx.runMutation(internal.agentTradingMutations.recordWithdrawal, {
         agentId: agent._id,
         token: args.token,
         amount: args.amount,
-        txHash: result.transactionHash,
+        txHash: hash,
         timestamp: Date.now(),
       });
 
-      return { success: true, txHash: result.transactionHash };
+      return { success: true, txHash: hash };
     } catch (err: any) {
       return { success: false, error: err.message ?? String(err) };
     }
